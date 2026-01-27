@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="MCCOFFEE", layout="wide")
 CLAVE_MAESTRA = "admin123"
 
-# Rutas de archivos
-db_v, db_p, db_s, db_a, db_st, db_m = "base_ventas.csv", "base_productos.csv", "base_stock.csv", "base_auditoria.csv", "base_staff.csv", "meta.txt"
+# Rutas de archivos (Agregamos db_mw para la meta semanal guardada)
+db_v, db_p, db_s, db_a, db_st, db_m, db_mw = "base_ventas.csv", "base_productos.csv", "base_stock.csv", "base_auditoria.csv", "base_staff.csv", "meta.txt", "meta_semanal.txt"
 
 def preparar():
     files = [
@@ -22,6 +22,8 @@ def preparar():
         if not os.path.exists(f): pd.DataFrame(columns=c).to_csv(f, index=False)
     if not os.path.exists(db_m):
         with open(db_m, "w") as f: f.write("5000")
+    if not os.path.exists(db_mw):
+        with open(db_mw, "w") as f: f.write("30000")
 
 preparar()
 
@@ -29,8 +31,9 @@ preparar()
 df_v = pd.read_csv(db_v)
 df_v['Fecha_DT'] = pd.to_datetime(df_v['Fecha'], format="%d/%m/%Y %H:%M", errors='coerce')
 df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df_st = pd.read_csv(db_st)
+
 with open(db_m, "r") as f: meta_diaria = float(f.read())
-meta_semanal = meta_diaria * 6 
+with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
 # --- 🎨 ESTILO FINAL ---
 st.markdown(f"""
@@ -53,6 +56,7 @@ with st.sidebar:
     
     st.metric("CORTE DE HOY", f"${v_hoy:,.2f}")
     st.progress(min(v_hoy / meta_diaria, 1.0))
+    st.caption(f"Meta Diaria: ${meta_diaria:,.0f}")
     
     st.markdown("---")
     st.write("📅 *PROGRESO SEMANAL*")
@@ -60,7 +64,7 @@ with st.sidebar:
     # Barra verde para la semana
     st.markdown(f"""<style>div.stProgress > div > div > div > div {{ background-color: #28a745 !important; }}</style>""", unsafe_allow_html=True)
     st.progress(min(v_sem / meta_semanal, 1.0))
-    st.caption(f"Meta Semanal: ${meta_semanal:,.0f}")
+    st.caption(f"Objetivo Semanal: ${meta_semanal:,.0f}")
     
     st.markdown("---")
     st.subheader("📦 BÓVEDA CENTRAL")
@@ -104,6 +108,17 @@ with tab_p: # CONTROL DE PEDIDOS
 with tab_j: # PANEL JEFE
     pw = st.text_input("Contraseña", type="password")
     if pw == CLAVE_MAESTRA:
+        # --- APARTADO PARA AJUSTAR METAS ---
+        with st.expander("🎯 CONFIGURAR METAS DE VENTA"):
+            col_m1, col_m2 = st.columns(2)
+            nueva_m_diaria = col_m1.number_input("Meta Diaria ($)", min_value=0.0, value=meta_diaria)
+            nueva_m_semanal = col_m2.number_input("Meta Semanal ($)", min_value=0.0, value=meta_semanal)
+            if st.button("ACTUALIZAR OBJETIVOS"):
+                with open(db_m, "w") as f: f.write(str(nueva_m_diaria))
+                with open(db_mw, "w") as f: f.write(str(nueva_m_semanal))
+                st.success("Metas actualizadas correctamente.")
+                st.rerun()
+
         st.subheader("🕵️ MONITOR DE AUDITORÍA (MOCHILAS)")
         st.dataframe(df_a, use_container_width=True, hide_index=True)
         
