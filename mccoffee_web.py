@@ -1,4 +1,4 @@
-  import streamlit as st
+import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime, timedelta
@@ -141,3 +141,4 @@ with tab_j:
                 pd.concat([df_p, np]).drop_duplicates('Cod', keep='last').to_csv(db_p, index=False)
                 pd.concat([df_s, ns]).drop_duplicates('Cod', keep='last').to_csv(db_s, index=False)
                 st.rerun()
+
