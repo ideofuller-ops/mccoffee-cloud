@@ -22,7 +22,9 @@ preparar()
 def cargar():
     v = pd.read_csv(db_v)
     v['Fecha_DT'] = pd.to_datetime(v['Fecha'], format="%d/%m/%Y %H:%M", errors='coerce')
-    with open(db_m, "r") as f: m = float(f.read())
+    try:
+        with open(db_m, "r") as f: m = float(f.read())
+    except: m = 5000.0
     return v, pd.read_csv(db_p), pd.read_csv(db_s), m
 
 df_v, df_p, df_s, meta_diaria = cargar()
@@ -33,7 +35,7 @@ st.markdown(f"""
     .stApp {{ background-color: #050505; color: white; }}
     .total-gigante {{ color: #d4af37; font-size: 70px !important; font-weight: bold; text-align: center; margin: -20px 0; }}
     .stMetricValue {{ color: #d4af37 !important; }}
-    .stButton>button {{ border-radius: 0px; border: 1px solid #d4af37; background: #000; color: #d4af37; }}
+    .stButton>button {{ border-radius: 0px; border: 1px solid #d4af37; background: #000; color: #d4af37; width: 100%; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -67,44 +69,49 @@ tab_v, tab_p, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "🔐 PANEL JEFE"]
 
 with tab_v:
     c1, c2, c3 = st.columns(3)
-    v_vend = c1.text_input("Vend.").upper()
+    v_vend = c1.text_input("Vendedor").upper()
     v_cli = c2.text_input("Cliente").upper()
     v_tel = c3.text_input("WhatsApp")
     c4, c5, c6 = st.columns([2, 1, 1])
     lista_p = df_p['Cod'].tolist() if not df_p.empty else ["N/A"]
-    v_prod = c4.selectbox("Producto", lista_p)
+    v_prod = c4.selectbox("Producto (Clave)", lista_p)
     v_cant = c5.number_input("Cant.", min_value=1)
+    
     if c6.button("➕ AÑADIR"):
         if 'c' not in st.session_state: st.session_state.c = []
         if v_prod != "N/A":
             p = df_p[df_p['Cod'] == v_prod].iloc[0]
-            st.session_state.tkt_data = {"Cod": v_prod, "Nom": p['Nom'], "Cant": v_cant, "Sub": p['Pre']*v_cant}
-            st.session_state.c.append(st.session_state.tkt_data)
+            st.session_state.c.append({"Cod": v_prod, "Nom": p['Nom'], "Cant": v_cant, "Sub": p['Pre']*v_cant})
 
     if 'c' in st.session_state and st.session_state.c:
         st.table(pd.DataFrame(st.session_state.c)[["Cant", "Nom", "Sub"]])
         v_env = st.number_input("Envío $", min_value=0.0)
         t_v = sum(i['Sub'] for i in st.session_state.c) + v_env
         st.markdown(f"<p class='total-gigante'>${t_v:,.2f}</p>", unsafe_allow_html=True)
-        if st.button("🚀 REGISTRAR VENTA", use_container_width=True):
-            nid = df_v['ID'].max() + 1 if not df_v.empty else 1
-            det = ", ".join([f"{i['Cant']}{i['Cod']}" for i in st.session_state.c])
-            nueva = pd.DataFrame([{"ID": nid, "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"), "Vend": v_vend, "Cli": v_cli, "Tel": v_tel, "Prod": det, "Monto": t_v, "Est": "Pendiente"}])
-            for i in st.session_state.c: df_s.loc[df_s['Cod'] == i['Cod'], 'Cant'] -= i['Cant']
+        
+        if st.button("🚀 REGISTRAR VENTA FINAL"):
+            nid = int(df_v['ID'].max() + 1 if not df_v.empty else 1)
+            det = ", ".join([f"{i['Cant']} {i['Nom']}" for i in st.session_state.c])
+            nueva = pd.DataFrame([{"ID": nid, "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"), 
+                                   "Vend": v_vend, "Cli": v_cli, "Tel": v_tel, "Prod": det, "Monto": t_v, "Est": "Pendiente"}])
+            
+            for i in st.session_state.c: 
+                df_s.loc[df_s['Cod'] == i['Cod'], 'Cant'] -= i['Cant']
+            
             pd.concat([df_v, nueva]).to_csv(db_v, index=False)
             df_s.to_csv(db_s, index=False)
             st.session_state.c = []
-            st.success("¡Venta Exitosa!")
+            st.success(f"Venta Registrada con Folio #{nid}")
             st.rerun()
 
 with tab_p:
-    st.subheader("Pedidos Recientes")
-    for idx, row in df_v.iloc[::-1].head(15).iterrows():
-        ca, cb, cc = st.columns([3, 1, 1])
+    st.subheader("Control de Pedidos")
+    for idx, row in df_v.iloc[::-1].head(20).iterrows():
+        ca, cb = st.columns([4, 1])
         icono = "🟠" if row['Est'] == "Pendiente" else "🟢"
-        ca.write(f"{icono} *{row['Cli']}*: {row['Prod']} (${row['Monto']})")
-        cb.write(f"{row['Est']}")
-        if cc.button("Cambiar", key=f"s_{row['ID']}"):
+        # AQUÍ ESTÁ EL CAMBIO: FOLIO | VENDEDOR | CLIENTE | PRODUCTOS
+        ca.write(f"{icono} *#{row['ID']}* | *{row['Vend']}* | {row['Cli']}: {row['Prod']} (${row['Monto']})")
+        if cb.button("Cambiar", key=f"s_{row['ID']}"):
             df_v.at[idx, 'Est'] = "Entregado" if row['Est'] == "Pendiente" else "Pendiente"
             df_v.to_csv(db_v, index=False)
             st.rerun()
@@ -113,32 +120,29 @@ with tab_j:
     st.subheader("🔐 Panel Administrativo")
     pw = st.text_input("Contraseña", type="password")
     if pw == CLAVE_MAESTRA:
-        # --- SECCIÓN DE DESCARGAS (LO QUE PEDISTE) ---
-        st.info("📊 AUDITORÍA: DESCARGAR ARCHIVOS EXCEL")
+        st.info("📊 AUDITORÍA Y REPORTES")
         col_d1, col_d2 = st.columns(2)
-        
         with col_d1:
-            st.download_button(label="📥 Descargar Base de Ventas", data=df_v.to_csv(index=False), 
-                               file_name=f"ventas_mccoffee_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv")
+            st.download_button(label="📥 Descargar Ventas (Excel)", data=df_v.to_csv(index=False), file_name="ventas_mccoffee.csv", mime="text/csv")
         with col_d2:
-            st.download_button(label="📥 Descargar Inventario", data=df_s.to_csv(index=False), 
-                               file_name=f"stock_mccoffee_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv")
+            st.download_button(label="📥 Descargar Stock (Excel)", data=df_s.to_csv(index=False), file_name="stock_mccoffee.csv", mime="text/csv")
         
         st.markdown("---")
         n_meta = st.number_input("Ajustar Meta Diaria $", value=meta_diaria)
         if st.button("ACTUALIZAR META"):
             with open(db_m, "w") as f: f.write(str(n_meta))
+            st.success("Meta actualizada")
             st.rerun()
             
         with st.expander("Gestionar Productos"):
             f1, f2, f3 = st.columns(3)
-            fc, fn, fp = f1.text_input("Clave"), f2.text_input("Nombre"), f3.number_input("Precio", min_value=0.0)
+            fc, fn, fp = f1.text_input("Clave").upper(), f2.text_input("Nombre Real"), f3.number_input("Precio", min_value=0.0)
             f4, f5 = st.columns(2)
             fu, fs = f4.text_input("Unidad"), f5.number_input("Stock Inicial", min_value=0)
-            if st.button("GUARDAR"):
-                np = pd.DataFrame([{"Cod": fc.upper(), "Nom": fn, "Pre": fp, "Uni": fu}])
-                ns = pd.DataFrame([{"Cod": fc.upper(), "Cant": fs}])
+            if st.button("GUARDAR PRODUCTO"):
+                np = pd.DataFrame([{"Cod": fc, "Nom": fn, "Pre": fp, "Uni": fu}])
+                ns = pd.DataFrame([{"Cod": fc, "Cant": fs}])
                 pd.concat([df_p, np]).drop_duplicates('Cod', keep='last').to_csv(db_p, index=False)
                 pd.concat([df_s, ns]).drop_duplicates('Cod', keep='last').to_csv(db_s, index=False)
+                st.success("Base de datos actualizada")
                 st.rerun()
-
