@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="MCCOFFEE", layout="wide")
 
 # --- 1. ARCHIVOS Y SEGURIDAD ---
-CLAVE_MAESTRA = "admin123" 
+CLAVE_MAESTRA = "mccoffee2026" 
 db_v, db_p, db_s, db_m = "base_ventas.csv", "base_productos.csv", "base_stock.csv", "meta.txt"
 
 def preparar():
@@ -143,3 +143,4 @@ with tab_j:
             for f in [db_v, db_p, db_s]:
                 if os.path.exists(f): os.remove(f)
             st.rerun()
+
