@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 # --- 1. CONFIGURACIÓN Y BASES DE DATOS ---
 st.set_page_config(page_title="MCCOFFEE", layout="wide")
-CLAVE_MAESTRA = "admin123"
+CLAVE_MAESTRA = "mccoffee2026"
 
 # Rutas de archivos (Agregamos db_mw para la meta semanal guardada)
 db_v, db_p, db_s, db_a, db_st, db_m, db_mw = "base_ventas.csv", "base_productos.csv", "base_stock.csv", "base_auditoria.csv", "base_staff.csv", "meta.txt", "meta_semanal.txt"
@@ -165,3 +165,4 @@ with tab_j: # PANEL JEFE
         st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
         if r1.button("LIMPIAR VENTAS", key="r_1"): pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
         if r2.button("BORRAR TODO", key="r_2"): [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
+
