@@ -59,7 +59,7 @@ with st.sidebar:
     st.caption(f"Meta Diaria: ${meta_diaria:,.0f}")
     
     st.markdown("---")
-    st.write("📅 *PROGRESO SEMANAL*")
+    st.write("📅 PROGRESO SEMANAL")
     st.metric("VENTA SEMANA", f"${v_sem:,.2f}")
     # Barra verde para la semana
     st.markdown(f"""<style>div.stProgress > div > div > div > div {{ background-color: #28a745 !important; }}</style>""", unsafe_allow_html=True)
@@ -100,7 +100,7 @@ with tab_v: # REGISTRO DE VENTAS
 with tab_p: # CONTROL DE PEDIDOS
     for idx, row in df_v.iloc[::-1].head(15).iterrows():
         ca, cb = st.columns([4, 1]); ico = "🟠" if row['Est'] == "Pendiente" else "🟢"
-        ca.write(f"{ico} *#{row['ID']}* | *{row['Vend']}* | {row['Cli']}: {row['Prod']}")
+        ca.write(f"{ico} #{row['ID']} | {row['Vend']} | {row['Cli']}: {row['Prod']}")
         label_btn = "Ok (Entregar)" if row['Est'] == "Pendiente" else "Regresar"
         if cb.button(label_btn, key=f"btn_p_{row['ID']}"):
             df_v.at[idx, 'Est'] = "Entregado" if row['Est'] == "Pendiente" else "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
@@ -148,7 +148,10 @@ with tab_j: # PANEL JEFE
                 pd.concat([df_st, pd.DataFrame([{"Nombre": n_v.upper()}])]).drop_duplicates().to_csv(db_st, index=False); st.rerun()
             st.markdown("---")
             f1, f2, f3, f4 = st.columns(4)
-            pc, pn, pp, pu = f1.text_input("Clave", key="p_1"), f2.text_input("Nombre", key="p_2"), f3.number_input("$", key="p_3"), f4.selectbox("Uni", ["KG", "PZA"], key="p_4")
+            # --- AQUÍ ESTÁ EL CAMBIO SOLICITADO ---
+            # Cambiamos selectbox por text_input para escritura libre
+            pc, pn, pp, pu = f1.text_input("Clave", key="p_1"), f2.text_input("Nombre", key="p_2"), f3.number_input("$", key="p_3"), f4.text_input("Uni", placeholder="KG, LB, OZ...", key="p_4")
+            
             if st.button("Guardar Producto Nuevo", key="p_btn_1"):
                 if pc:
                     pd.concat([df_p, pd.DataFrame([{"Cod": pc.upper(), "Nom": pn, "Pre": pp, "Uni": pu}])]).to_csv(db_p, index=False)
