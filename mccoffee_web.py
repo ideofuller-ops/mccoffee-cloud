@@ -61,6 +61,20 @@ st.markdown(f"""
         background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 15px;
     }}
 
+    /* TAG MVP DEL DÍA */
+    .mvp-tag {{
+        background: linear-gradient(90deg, #f1c40f, #d4af37);
+        color: black;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        text-transform: uppercase;
+        margin-left: 8px;
+        box-shadow: 0px 0px 10px rgba(241, 196, 15, 0.8);
+        font-family: 'Orbitron', sans-serif;
+    }}
+
     /* DISEÑO DE PESTAÑAS - AHORA MÁS BRILLANTES */
     .stTabs [data-baseweb="tab-list"] {{ 
         gap: 10px; 
@@ -71,7 +85,7 @@ st.markdown(f"""
     .stTabs [data-baseweb="tab"] {{
         background: rgba(255, 255, 255, 0.1); 
         border-radius: 10px 10px 0 0;
-        color: #d4af37 !important; /* Color dorado para que se lean bien */
+        color: #d4af37 !important; 
         padding: 10px 15px; 
         border: 1px solid rgba(212, 175, 55, 0.2);
     }}
@@ -121,7 +135,6 @@ with st.sidebar:
     st.markdown("<h1 class='titulo-mccoffee'>CONTROL TOTAL<br>MCCOFFEE</h1>", unsafe_allow_html=True)
     
     ahora_mx = datetime.now(ZONA_HORARIA)
-    # AJUSTE: Reloj con Fecha y Hora
     st.markdown(f"""
         <div class='live-clock'>
             <div style='font-size: 0.8rem; color: #d4af37; opacity: 0.8; margin-bottom: 2px;'>📅 {ahora_mx.strftime('%d/%b/%Y')}</div>
@@ -147,11 +160,30 @@ with st.sidebar:
         ventas_hoy = df_hoy.groupby('Vend')['Monto'].sum().reset_index()
         ranking = pd.merge(df_st, ventas_hoy, left_on='Nombre', right_on='Vend', how='left').fillna(0)
         ranking = ranking.sort_values(by='Monto', ascending=False)
-        for _, r in ranking.iterrows():
+        
+        # INYECCIÓN: Lógica de Medallas y MVP
+        for i, (_, r) in enumerate(ranking.iterrows()):
+            if i == 0:
+                label, tag = "🥇", "<span class='mvp-tag'>MVP DEL DÍA</span>"
+            elif i == 1:
+                label, tag = "🥈", ""
+            elif i == 2:
+                label, tag = "🥉", ""
+            else:
+                label, tag = f"#{i+1}", ""
+            
             meta_ind = meta_diaria / len(df_st) if len(df_st) > 0 else 1000
             progreso_barra = min(r['Monto'] / meta_ind, 1.0)
             porcentaje_real = (r['Monto'] / meta_diaria * 100) if meta_diaria > 0 else 0
-            st.markdown(f"<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span></div></div>", unsafe_allow_html=True)
+            
+            st.markdown(f"""
+                <div class='ranking-row'>
+                    <div style='display:flex; justify-content:space-between; align-items:center;'>
+                        <span><b>{label} {r['Nombre']}</b> {tag}</span>
+                        <span>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
             st.progress(progreso_barra)
 
     st.markdown("---")
@@ -206,7 +238,6 @@ with tab_p: # CONTROL DE PEDIDOS
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
         
-        # AJUSTE: Badge con Fecha y Hora
         try:
             dt_badge = pd.to_datetime(row['Fecha'], dayfirst=True)
             f_format = dt_badge.strftime('%d/%b | %H:%M')
@@ -241,7 +272,7 @@ with tab_p: # CONTROL DE PEDIDOS
                 df_v.at[idx, 'Est'] = "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
 
 with tab_d: # 📊 DASHBOARD
-    st.markdown("###  ESTRATEGIA MCCOFFEE")
+    st.markdown("### 👑 ESTRATEGIA MCCOFFEE")
     c_met1, c_met2, c_met3 = st.columns(3)
     c_met1.metric("TICKET PROM.", f"${(df_v['Monto'].mean() if not df_v.empty else 0):,.2f}")
     c_met2.metric("TOTAL VENTAS", len(df_v))
@@ -249,7 +280,6 @@ with tab_d: # 📊 DASHBOARD
     
     st.markdown("#### 🔥 PULSO MCCOFFEE (LIVE)")
     for _, l in df_v.sort_values(by='ID', ascending=False).head(5).iterrows():
-        # AJUSTE: Feed con Fecha
         try:
             dt_feed = pd.to_datetime(l['Fecha'], dayfirst=True)
             h_f = dt_feed.strftime('%d/%b %H:%M')
@@ -321,4 +351,3 @@ with tab_j: # PANEL JEFE (LÓGICA INTACTA)
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
         if r2.button("BORRAR TODO", key="r_2"): 
             [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
-
