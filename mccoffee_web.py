@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pytz
 
 # --- 1. CONFIGURACIÓN Y BASES DE DATOS ---
-st.set_page_config(page_title="MCCOFFEE COMMAND CENTER", layout="wide")
+st.set_page_config(page_title="MCCOFFEE", layout="wide")
 CLAVE_MAESTRA = "mccoffee2026"
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 
@@ -29,43 +29,41 @@ def preparar():
 
 preparar()
 
-# CARGA DE DATOS
 df_v = pd.read_csv(db_v)
-# Formato con segundos para precisión total
-df_v['Fecha_DT'] = pd.to_datetime(df_v['Fecha'], format="%d/%m/%Y %H:%M:%S", errors='coerce')
+# Ajuste para leer formatos con y sin segundos
+df_v['Fecha_DT'] = pd.to_datetime(df_v['Fecha'], dayfirst=True, errors='coerce')
 df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df_st = pd.read_csv(db_st)
 
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO "DIAMANTE NEGRO & ORO NEÓN" ---
+# --- 🎨 ESTILO "DIAMANTE NEGRO" (CON ADICIONES DE DASHBOARD) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-
+    
     .stApp {{ 
-        background: radial-gradient(circle at 10% 10%, #1a1a1a 0%, #050505 100%);
+        background: radial-gradient(circle at top left, #1a1a1a 0%, #050505 100%);
         color: white; 
     }}
 
-    /* Título con Glow Neon */
     .titulo-mccoffee {{ 
-        text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 45px;
-        text-shadow: 0px 0px 20px rgba(212, 175, 55, 0.6); margin-bottom: 10px;
+        text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 42px; line-height: 1.1;
+        text-shadow: 0px 4px 15px rgba(212, 175, 55, 0.4); margin-bottom: 25px;
     }}
 
-    /* Reloj Digital Premium */
+    /* Reloj Sidebar */
     .live-clock {{
         font-family: 'Orbitron', sans-serif; color: #f1c40f; text-align: center;
-        font-size: 1.2rem; text-shadow: 0px 0px 10px rgba(241, 196, 15, 0.5);
-        background: rgba(0,0,0,0.3); border-radius: 10px; padding: 5px; margin-bottom: 20px;
+        font-size: 1.1rem; text-shadow: 0px 0px 10px rgba(241, 196, 15, 0.5);
+        background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 15px;
     }}
 
-    /* Pestañas de Oro Metálico */
-    .stTabs [data-baseweb="tab-list"] {{ gap: 12px; }}
+    /* Pestañas */
+    .stTabs [data-baseweb="tab-list"] {{ gap: 10px; background-color: transparent; }}
     .stTabs [data-baseweb="tab"] {{
-        background: rgba(255, 255, 255, 0.03); border-radius: 10px 10px 0 0;
-        color: #888; padding: 12px 25px; border: 1px solid rgba(212, 175, 55, 0.1);
+        background: rgba(255, 255, 255, 0.05); border-radius: 12px 12px 0 0;
+        color: #888; padding: 10px 20px; border: 1px solid rgba(212, 175, 55, 0.1);
     }}
     .stTabs [aria-selected="true"] {{
         background: linear-gradient(180deg, #f1c40f, #d4af37) !important;
@@ -73,67 +71,58 @@ st.markdown(f"""
         box-shadow: inset 0px 0px 15px rgba(255, 255, 255, 0.6) !important;
     }}
 
-    /* Botones con Glow */
+    /* Botones */
     .stButton>button {{ 
         border: 2px solid #f1c40f; border-radius: 8px; 
-        background: linear-gradient(145deg, #1a1a1a, #000); color: #f1c40f;
-        font-weight: 800; transition: 0.4s; width: 100%;
+        background: linear-gradient(145deg, #1a1a1a, #000); color: #f1c40f; font-weight: 800;
+        transition: 0.3s; width: 100%;
     }}
     .stButton>button:hover {{ 
-        background: #f1c40f; color: #000; box-shadow: 0px 0px 20px rgba(241, 196, 15, 0.8);
+        background: #f1c40f; color: #000; 
+        box-shadow: 0px 0px 15px rgba(241, 196, 15, 0.5) !important;
     }}
 
-    /* Tarjetas de Pedido con Badge Temporal */
+    /* Badge de Tiempo en Pedidos */
     .card-pedido {{
-        background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(212, 175, 55, 0.2);
-        border-radius: 15px; padding: 20px; margin-bottom: 15px; position: relative;
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.3);
+        border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative;
     }}
     .time-badge {{
-        position: absolute; top: 10px; right: 10px; background: rgba(212, 175, 55, 0.15);
-        color: #f1c40f; padding: 4px 10px; border-radius: 5px; font-size: 12px;
-        font-family: 'Orbitron', sans-serif; border: 1px solid #d4af37;
+        position: absolute; top: 10px; right: 10px; background: rgba(212, 175, 55, 0.1);
+        color: #f1c40f; padding: 3px 8px; border-radius: 5px; font-size: 11px;
+        font-family: 'Orbitron', sans-serif; border: 1px solid rgba(241, 196, 15, 0.3);
     }}
 
-    /* Pulso Live Feed */
-    @keyframes pulse-gold {{
-        0% {{ box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }}
-        70% {{ box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }}
-        100% {{ box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }}
-    }}
+    /* Feed de Pulso */
     .feed-item {{
-        padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;
-        margin-bottom: 8px; border-left: 4px solid #f1c40f; animation: pulse-gold 2s infinite;
-        font-size: 14px;
+        padding: 8px; background: rgba(212, 175, 55, 0.05); border-left: 4px solid #f1c40f;
+        margin-bottom: 5px; border-radius: 4px; font-size: 13px; animation: glow 2s infinite alternate;
     }}
-
-    /* Gráficas Mamalonas */
-    .dashboard-card {{
-        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 15px; padding: 20px; margin-bottom: 20px;
-    }}
+    @keyframes glow {{ from {{ box-shadow: 0 0 5px rgba(241,196,15,0.2); }} to {{ box-shadow: 0 0 15px rgba(241,196,15,0.4); }} }}
 
     .ranking-row {{ 
-        background: rgba(212, 175, 55, 0.07); padding: 10px; border-radius: 8px; 
-        margin-bottom: 8px; border-left: 4px solid #d4af37; 
+        background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; 
+        margin-bottom: 5px; border-left: 3px solid #d4af37; font-size: 14px;
     }}
-    
-    .total-gigante {{ color: #d4af37; font-size: 60px !important; font-weight: bold; text-align: center; }}
+    .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; }}
+    div[data-testid="stVerticalBlock"] > div:empty {{ display: none !important; }}
+    hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. SIDEBAR (CONTROL Y RANKING) ---
+# --- 2. SIDEBAR (REPORTES + RELOJ) ---
 with st.sidebar:
     st.markdown("<h1 class='titulo-mccoffee'>CONTROL TOTAL<br>MCCOFFEE</h1>", unsafe_allow_html=True)
     
-    # Reloj Live CDMX
-    hora_actual = datetime.now(ZONA_HORARIA)
-    st.markdown(f"<div class='live-clock'>🕒 {hora_actual.strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
+    # RELOJ DIGITAL EN VIVO
+    ahora_mx = datetime.now(ZONA_HORARIA)
+    st.markdown(f"<div class='live-clock'>🕒 {ahora_mx.strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
     
     st.markdown("---")
-    hoy = hora_actual.date()
+    hoy = ahora_mx.date()
     df_hoy = df_v[df_v['Fecha_DT'].dt.date == hoy]
     v_hoy = df_hoy['Monto'].sum()
-    v_sem = df_v[df_v['Fecha_DT'] >= (datetime.now() - timedelta(days=7))]['Monto'].sum()
+    v_sem = df_v[df_v['Fecha_DT'] >= (ahora_mx - timedelta(days=7))]['Monto'].sum()
     
     st.metric("CORTE DE HOY", f"${v_hoy:,.2f}")
     st.progress(min(v_hoy / meta_diaria, 1.0))
@@ -157,8 +146,14 @@ with st.sidebar:
     st.metric("VENTA SEMANA", f"${v_sem:,.2f}")
     st.progress(min(v_sem / meta_semanal, 1.0))
     st.caption(f"Objetivo Semanal: ${meta_semanal:,.0f}")
+    
+    st.markdown("---")
+    st.subheader("📦 BÓVEDA CENTRAL")
+    for _, s in df_s.iterrows():
+        p_u = df_p[df_p['Cod'] == s['Cod']]['Uni'].values[0] if not df_p[df_p['Cod'] == s['Cod']].empty else ""
+        st.markdown(f"<p style='color: #d4af37; margin:0; font-size:14px;'>{s['Cod']}: <b>{s['Cant']} {p_u}</b></p>", unsafe_allow_html=True)
 
-# --- 3. PESTAÑAS ---
+# --- 3. PESTAÑAS (INCLUYENDO EL NUEVO DASHBOARD) ---
 tab_v, tab_p, tab_d, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "📊 DASHBOARD", "🔐 PANEL JEFE"])
 
 with tab_v: # REGISTRO DE VENTAS
@@ -185,7 +180,7 @@ with tab_v: # REGISTRO DE VENTAS
         if st.button("🚀 REGISTRAR VENTA FINAL"):
             nid = int(df_v['ID'].max() + 1 if not df_v.empty else 1)
             det = ", ".join([f"{i['Cant']} {i['Nom']} (${i['PrecioU']})" for i in st.session_state.car])
-            # Registro con segundos para precisión total
+            # AHORA REGISTRA CON SEGUNDOS
             nv = pd.DataFrame([{"ID": nid, "Fecha": datetime.now(ZONA_HORARIA).strftime("%d/%m/%Y %H:%M:%S"), "Vend": v_v, "Cli": v_c, "Tel": v_t, "Prod": det, "Monto": tv, "Est": "Pendiente"}])
             for i in st.session_state.car:
                 mk = (df_a['Vendedor'] == v_v) & (df_a['Cod'] == i['Cod'])
@@ -193,22 +188,19 @@ with tab_v: # REGISTRO DE VENTAS
                 else: df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": v_v, "Cod": i['Cod'], "Entregado": 0, "Vendido": i['Cant'], "Actual": -i['Cant']}])])
             pd.concat([df_v, nv]).to_csv(db_v, index=False); df_a.to_csv(db_a, index=False); st.session_state.car = []; st.rerun()
 
-with tab_p: # CONTROL DE PEDIDOS CON TIMESTAMP BADGE
+with tab_p: # CONTROL DE PEDIDOS
     pedidos_ordenados = df_v.sort_values(by=['ID'], ascending=False).head(20)
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
+        st.markdown(f"<div class='card-pedido'>", unsafe_allow_html=True)
         
-        st.markdown(f"""
-            <div class='card-pedido'>
-                <div class='time-badge'>🕒 {row['Fecha'].split(' ')[1]}</div>
-                <b>{color_ico} #{row['ID']} | {row['Vend']}</b><br>
-                <small>Cliente: {row['Cli']} | WhatsApp: {row['Tel']}</small><br>
-                <div style='color: #f1c40f; margin-top:10px;'>Total: <b>${row['Monto']:,.2f}</b></div>
-                <caption style='font-size:11px;'>📦 {row['Prod']}</caption>
-            </div>
-            """, unsafe_allow_html=True)
+        # BADGE DE HORA EXACTA (HH:MM:SS)
+        h_exacta = row['Fecha'].split(' ')[1] if ' ' in row['Fecha'] else "--:--"
+        st.markdown(f"<div class='time-badge'>🕒 {h_exacta}</div>", unsafe_allow_html=True)
         
+        st.markdown(f"*{color_ico} #{row['ID']} | {row['Vend']}* | {row['Cli']} | Total: *${row['Monto']:,.2f}*")
+        st.caption(f"📦 {row['Prod']} ({row['Est']})")
         if row['Est'] == "Pendiente":
             c_ok, c_gar, c_monto = st.columns([1, 1, 1])
             if c_ok.button("✅ ENTREGAR", key=f"btn_ok_{row['ID']}"):
@@ -219,70 +211,46 @@ with tab_p: # CONTROL DE PEDIDOS CON TIMESTAMP BADGE
                 nid_new = int(df_v['ID'].max() + 1)
                 nv_gar = pd.DataFrame([{"ID": nid_new, "Fecha": datetime.now(ZONA_HORARIA).strftime("%d/%m/%Y %H:%M:%S"), "Vend": row['Vend'], "Cli": row['Cli'] + " (REPO)", "Tel": row['Tel'], "Prod": f"[GARANTÍA] {row['Prod']}", "Monto": costo_reenvio, "Est": "Pendiente"}])
                 df_v = pd.concat([df_v, nv_gar]); df_v.to_csv(db_v, index=False); st.rerun()
+        else:
+            if st.button("↩️ CORREGIR", key=f"btn_fix_{row['ID']}"):
+                df_v.at[idx, 'Est'] = "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-with tab_d: # 📊 DASHBOARD MAMA-LÓN
+with tab_d: # 📊 DASHBOARD "MAMALÓN"
     st.markdown("### 👑 ESTRATEGIA MCCOFFEE")
-    
-    # 1. Indicadores Rapidos
-    c_d1, c_d2, c_d3 = st.columns(3)
-    t_avg = df_v['Monto'].mean() if not df_v.empty else 0
-    c_d1.metric("TICKET PROMEDIO", f"${t_avg:,.2f}")
-    c_d2.metric("TOTAL PEDIDOS", len(df_v))
-    c_d3.metric("GARANTÍAS (SINIESTROS)", len(df_v[df_v['Est'].str.contains("Siniestro")]))
+    c_m1, c_m2, c_m3 = st.columns(3)
+    c_m1.metric("TICKET PROM.", f"${(df_v['Monto'].mean() if not df_v.empty else 0):,.2f}")
+    c_m2.metric("TOTAL VENTAS", len(df_v))
+    c_m3.metric("SINIESTROS", len(df_v[df_v['Est'].str.contains("Siniestro")]))
 
-    # 2. El Pulso McCoffee (Live Feed)
-    st.markdown("#### 🔥 PULSO MCCOFFEE")
-    ultimos = df_v.sort_values(by='ID', ascending=False).head(5)
-    for _, l in ultimos.iterrows():
-        st.markdown(f"<div class='feed-item'><b>{l['Fecha'].split(' ')[1]}</b> | <b>{l['Vend']}</b> cerró venta de ${l['Monto']:,.0f} a {l['Cli']}</div>", unsafe_allow_html=True)
+    st.markdown("#### 🔥 PULSO MCCOFFEE (LIVE FEED)")
+    ultimos_5 = df_v.sort_values(by='ID', ascending=False).head(5)
+    for _, l in ultimos_5.iterrows():
+        h_f = l['Fecha'].split(' ')[1] if ' ' in l['Fecha'] else ""
+        st.markdown(f"<div class='feed-item'><b>{h_f}</b> | <b>{l['Vend']}</b> cerró venta de ${l['Monto']:,.0f} a {l['Cli']}</div>", unsafe_allow_html=True)
 
-    # 3. Gráficas de Oro Neón
     st.markdown("---")
-    col_g1, col_g2 = st.columns([2, 1])
-
-    with col_g1: # Gráfica de Líneas Glow
+    cg1, cg2 = st.columns([2, 1])
+    with cg1:
         st.write("📈 RENDIMIENTO POR HORA")
         if not df_v.empty:
-            df_v['Hora'] = df_v['Fecha_DT'].dt.hour
-            ventas_hora = df_v.groupby('Hora')['Monto'].sum().reset_index()
-            
-            # Gráfica Neon
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=ventas_hora['Hora'], y=ventas_hora['Monto'], mode='lines+markers',
-                                     line=dict(color='#f1c40f', width=4),
-                                     marker=dict(size=10, color='#fff', line=dict(color='#f1c40f', width=2))))
-            fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                              xaxis=dict(gridcolor='rgba(255,255,255,0.05)'), yaxis=dict(gridcolor='rgba(255,255,255,0.05)'))
+            df_v['H'] = df_v['Fecha_DT'].dt.hour
+            v_h = df_v.groupby('H')['Monto'].sum().reset_index()
+            fig = go.Figure(go.Scatter(x=v_h['H'], y=v_h['Monto'], mode='lines+markers', line=dict(color='#f1c40f', width=4), fill='tozeroy', fillcolor='rgba(212, 175, 55, 0.1)'))
+            fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=300, margin=dict(l=0,r=0,t=0,b=0))
             st.plotly_chart(fig, use_container_width=True)
-            
-            # Mensaje Opción B (Estratega)
-            pico_h = ventas_hora.loc[ventas_hora['Monto'].idxmax(), 'Hora']
-            st.warning(f"🎯 VENTANA DE IMPACTO DETECTADA: *{pico_h}:00 HRS*. Los datos confirman máxima efectividad de cierre.")
+            pico = v_h.loc[v_h['Monto'].idxmax(), 'H'] if not v_h.empty else 0
+            st.warning(f"🎯 VENTANA DE IMPACTO DETECTADA: *{pico}:00 HRS*. Los datos confirman máxima efectividad de cierre.")
+    
+    with cg2:
+        st.write("🏎️ META SEMANAL")
+        porcent_w = min(v_sem / meta_semanal * 100, 100)
+        fig_g = go.Figure(go.Indicator(mode="gauge+number", value=porcent_w, gauge={'bar':{'color':'#f1c40f'}, 'bgcolor':'rgba(255,255,255,0.05)', 'axis':{'range':[0,100]}}))
+        fig_g.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color':"white"}, height=300, margin=dict(l=20,r=20,t=0,b=0))
+        st.plotly_chart(fig_g, use_container_width=True)
 
-    with col_g2: # Velocímetro de Metas
-        st.write("🏎️ VELOCÍMETRO SEMANAL")
-        porcentaje_sem = min(v_sem / meta_semanal * 100, 100)
-        fig_gauge = go.Figure(go.Indicator(
-            mode = "gauge+number", value = porcentaje_sem,
-            domain = {'x': [0, 1], 'y': [0, 1]},
-            title = {'text': "Progreso Meta %", 'font': {'color': "#f1c40f", 'size': 18}},
-            gauge = {
-                'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
-                'bar': {'color': "#f1c40f"},
-                'bgcolor': "rgba(255,255,255,0.05)",
-                'borderwidth': 2,
-                'bordercolor': "#d4af37",
-                'steps': [
-                    {'range': [0, 50], 'color': 'rgba(255,0,0,0.1)'},
-                    {'range': [50, 90], 'color': 'rgba(241,196,15,0.1)'},
-                    {'range': [90, 100], 'color': 'rgba(0,255,0,0.1)'}],
-                'threshold': {'line': {'color': "white", 'width': 4}, 'thickness': 0.75, 'value': 100}
-            }))
-        fig_gauge.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
-        st.plotly_chart(fig_gauge, use_container_width=True)
-
-with tab_j: # PANEL JEFE (AUDITORÍA Y RESET)
-    pw = st.text_input("Contraseña Maestro", type="password")
+with tab_j: # PANEL JEFE (CON TU LÓGICA INTACTA)
+    pw = st.text_input("Contraseña", type="password")
     if pw == CLAVE_MAESTRA:
         with st.expander("🎯 CONFIGURAR METAS"):
             c_m1, c_m2 = st.columns(2)
@@ -294,15 +262,37 @@ with tab_j: # PANEL JEFE (AUDITORÍA Y RESET)
 
         st.subheader("🕵️ MONITOR DE AUDITORÍA")
         st.dataframe(df_a, use_container_width=True, hide_index=True)
-        
-        # Botones de exportación
-        ce1, ce2, ce3 = st.columns(3)
+        c_j1, c_j2 = st.columns(2)
+        with c_j1:
+            with st.expander("📥 SURTIR BÓVEDA"):
+                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="j_s3"), st.number_input("Cantidad Entrada", min_value=0.1, key="j_n2")
+                if st.button("SUMAR A BÓVEDA"): df_s.loc[df_s['Cod'] == bp, 'Cant'] += bn; df_s.to_csv(db_s, index=False); st.rerun()
+        with c_j2:
+            with st.expander("🚚 RE-SURTIR / CARGA POR CIUDAD"):
+                cv, cp = st.selectbox("Elegir Vendedor", l_st, key="j_s4"), st.selectbox("Producto a Surtir", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="j_s5")
+                cn, ciu = st.number_input("Cantidad a entregar", min_value=0.1, key="j_n3"), st.text_input("Ciudad de Entrega", "CDMX")
+                if st.button("CONFIRMAR CARGA ACUMULATIVA"):
+                    df_s.loc[df_s['Cod'] == cp, 'Cant'] -= cn
+                    mk = (df_a['Vendedor'] == cv) & (df_a['Cod'] == cp)
+                    if mk.any(): df_a.loc[mk, 'Entregado'] += cn; df_a.loc[mk, 'Actual'] += cn
+                    else: df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": cv, "Cod": cp, "Entregado": cn, "Vendido": 0, "Actual": cn}])])
+                    df_s.to_csv(db_s, index=False); df_a.to_csv(db_a, index=False); st.rerun()
+
+        with st.expander("👥 STAFF Y CATÁLOGO"):
+            cs1, cs2 = st.columns(2); nv = cs1.text_input("Nuevo Vendedor", key="j_t1")
+            if cs2.button("Registrar Vendedor", key="j_b1"): pd.concat([df_st, pd.DataFrame([{"Nombre": nv.upper()}])]).drop_duplicates().to_csv(db_st, index=False); st.rerun()
+            st.markdown("---")
+            f1, f2, f3, f4 = st.columns(4)
+            pc, pn, pp, pu = f1.text_input("Clave", key="p1"), f2.text_input("Nombre", key="p2"), f3.number_input("$", key="p3"), f4.text_input("Uni", key="p4")
+            if st.button("Guardar Producto Nuevo", key="pb1"):
+                if pc: pd.concat([df_p, pd.DataFrame([{"Cod": pc.upper(), "Nom": pn, "Pre": pp, "Uni": pu}])]).to_csv(db_p, index=False); pd.concat([df_s, pd.DataFrame([{"Cod": pc.upper(), "Cant": 0}])]).to_csv(db_s, index=False); st.rerun()
+
+        st.info("📊 EXPORTAR REPORTES"); ce1, ce2, ce3 = st.columns(3)
         ce1.download_button("📥 Ventas", df_v.to_csv(index=False), "ventas.csv")
         ce2.download_button("📥 Mochilas", df_a.to_csv(index=False), "mochilas.csv")
         ce3.download_button("📥 Bóveda", df_s.to_csv(index=False), "boveda.csv")
-
-        st.error("🚨 ZONA DE REINICIO"); r1, r2 = st.columns(2)
-        if r1.button("LIMPIAR VENTAS"): 
+        st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
+        if r1.button("LIMPIAR VENTAS", key="r_1"): 
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
-        if r2.button("BORRAR TODO"): 
+        if r2.button("BORRAR TODO", key="r_2"): 
             [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
