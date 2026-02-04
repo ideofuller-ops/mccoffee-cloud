@@ -272,7 +272,7 @@ with tab_p: # CONTROL DE PEDIDOS
                 df_v.at[idx, 'Est'] = "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
 
 with tab_d: # 📊 DASHBOARD
-    st.markdown("###  ESTRATEGIA MCCOFFEE")
+    st.markdown("### 👑 ESTRATEGIA MCCOFFEE")
     c_met1, c_met2, c_met3 = st.columns(3)
     c_met1.metric("TICKET PROM.", f"${(df_v['Monto'].mean() if not df_v.empty else 0):,.2f}")
     c_met2.metric("TOTAL VENTAS", len(df_v))
@@ -332,7 +332,7 @@ with tab_j: # PANEL JEFE (LÓGICA INTACTA)
                     df_s.loc[df_s['Cod'] == cp, 'Cant'] -= cn
                     mk = (df_a['Vendedor'] == cv) & (df_a['Cod'] == cp)
                     if mk.any(): df_a.loc[mk, 'Entregado'] += cn; df_a.loc[mk, 'Actual'] += cn
-                    else: pd.concat([df_a, pd.DataFrame([{"Vendedor": cv, "Cod": cp, "Entregado": cn, "Vendido": 0, "Actual": cn}])]).to_csv(db_a, index=False)
+                    else: df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": cv, "Cod": cp, "Entregado": cn, "Vendido": 0, "Actual": cn}])])
                     df_s.to_csv(db_s, index=False); df_a.to_csv(db_a, index=False); st.rerun()
         with st.expander("👥 STAFF Y CATÁLOGO"):
             cs1, cs2 = st.columns(2); nv = cs1.text_input("Nuevo Vendedor", key="j_t1")
@@ -351,4 +351,3 @@ with tab_j: # PANEL JEFE (LÓGICA INTACTA)
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
         if r2.button("BORRAR TODO", key="r_2"): 
             [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
-
