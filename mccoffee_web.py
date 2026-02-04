@@ -57,7 +57,7 @@ st.markdown(f"""
 
     .live-clock {{
         font-family: 'Orbitron', sans-serif; color: #f1c40f; text-align: center;
-        font-size: 1.1rem; text-shadow: 0px 0px 10px rgba(241, 196, 15, 0.5);
+        text-shadow: 0px 0px 10px rgba(241, 196, 15, 0.5);
         background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 15px;
     }}
 
@@ -121,7 +121,13 @@ with st.sidebar:
     st.markdown("<h1 class='titulo-mccoffee'>CONTROL TOTAL<br>MCCOFFEE</h1>", unsafe_allow_html=True)
     
     ahora_mx = datetime.now(ZONA_HORARIA)
-    st.markdown(f"<div class='live-clock'>🕒 {ahora_mx.strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
+    # AJUSTE: Reloj con Fecha y Hora
+    st.markdown(f"""
+        <div class='live-clock'>
+            <div style='font-size: 0.8rem; color: #d4af37; opacity: 0.8; margin-bottom: 2px;'>📅 {ahora_mx.strftime('%d/%b/%Y')}</div>
+            <div style='font-size: 1.2rem; font-weight: bold;'>🕒 {ahora_mx.strftime('%H:%M:%S')}</div>
+        </div>
+    """, unsafe_allow_html=True)
     
     ahora_naive = ahora_mx.replace(tzinfo=None)
     hoy = ahora_naive.date()
@@ -199,15 +205,21 @@ with tab_p: # CONTROL DE PEDIDOS
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
-        h_exacta = row['Fecha'].split(' ')[1] if ' ' in row['Fecha'] else "--:--"
         
+        # AJUSTE: Badge con Fecha y Hora
+        try:
+            dt_badge = pd.to_datetime(row['Fecha'], dayfirst=True)
+            f_format = dt_badge.strftime('%d/%b | %H:%M')
+        except:
+            f_format = row['Fecha']
+            
         st.markdown(f"""
             <div class='card-pedido'>
                 <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;'>
                     <div style='flex-grow: 1; margin-right: 15px;'>
                         <b>{color_ico} #{row['ID']} | {row['Vend']}</b> | {row['Cli']}
                     </div>
-                    <div class='time-badge-fixed'>🕒 {h_exacta}</div>
+                    <div class='time-badge-fixed'>🕒 {f_format}</div>
                 </div>
                 <div style='font-size: 15px;'>Total: <span style='color:#f1c40f; font-weight:bold;'>${row['Monto']:,.2f}</span></div>
                 <div style='margin-top:5px; color:#888; font-size:12px;'>📦 {row['Prod']} ({row['Est']})</div>
@@ -237,7 +249,13 @@ with tab_d: # 📊 DASHBOARD
     
     st.markdown("#### 🔥 PULSO MCCOFFEE (LIVE)")
     for _, l in df_v.sort_values(by='ID', ascending=False).head(5).iterrows():
-        h_f = l['Fecha'].split(' ')[1] if ' ' in l['Fecha'] else ""
+        # AJUSTE: Feed con Fecha
+        try:
+            dt_feed = pd.to_datetime(l['Fecha'], dayfirst=True)
+            h_f = dt_feed.strftime('%d/%b %H:%M')
+        except:
+            h_f = l['Fecha']
+            
         st.markdown(f"<div class='feed-item'><b>{h_f}</b> | <b>{l['Vend']}</b> cerró venta de ${l['Monto']:,.0f} a {l['Cli']}</div>", unsafe_allow_html=True)
     
     st.markdown("---")
