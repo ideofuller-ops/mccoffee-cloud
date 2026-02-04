@@ -33,7 +33,7 @@ df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO "DIAMANTE NEGRO" (PREMIUM) ---
+# --- 🎨 ESTILO "ORO METÁLICO" (EL CHIDO) ---
 st.markdown(f"""
     <style>
     .stApp {{ 
@@ -42,36 +42,57 @@ st.markdown(f"""
     }}
     .titulo-mccoffee {{ 
         text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 42px; line-height: 1.1;
-        text-shadow: 0px 4px 10px rgba(0,0,0,0.5); margin: 20px 0;
+        text-shadow: 0px 4px 15px rgba(212, 175, 55, 0.4); margin: 20px 0;
     }}
-    .card-pedido {{
+
+    /* PESTAÑAS (TABS) CON ILUMINACIÓN AMARILLA */
+    .stTabs [data-baseweb="tab-list"] {{ gap: 15px; }}
+    .stTabs [data-baseweb="tab"] {{
         background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(212, 175, 55, 0.3);
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 15px;
+        border-radius: 8px 8px 0 0;
+        color: #888;
+        padding: 10px 30px;
+        transition: all 0.3s ease;
     }}
-    @keyframes barLoad {{ from {{ width: 0; }} to {{ width: 100%; }} }}
-    .stProgress > div > div > div > div {{ 
-        background: linear-gradient(90deg, #b8860b, #d4af37) !important; 
-        animation: barLoad 1.5s ease-in-out;
-        border-radius: 8px;
+    .stTabs [aria-selected="true"] {{
+        background: linear-gradient(180deg, #d4af37, #b8860b) !important;
+        color: black !important;
+        font-weight: bold;
+        box-shadow: 0px 0px 20px rgba(212, 175, 55, 0.6);
+        border: none !important;
     }}
-    .ranking-row {{ 
-        background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; 
-        margin-bottom: 5px; border-left: 3px solid #d4af37; font-size: 14px;
-    }}
+
+    /* BOTONES CON GLOW DORADO */
     .stButton>button {{ 
-        border: 1px solid #d4af37; border-radius: 4px; 
-        background: #000; color: #d4af37; font-weight: 800;
-        transition: 0.3s; width: 100%;
+        border: 1px solid #d4af37; border-radius: 6px; 
+        background: linear-gradient(145deg, #1a1a1a, #000); color: #d4af37; font-weight: 800;
+        transition: 0.4s; width: 100%; height: 45px;
+        text-transform: uppercase; letter-spacing: 1px;
     }}
     .stButton>button:hover {{ 
-        background: #d4af37; color: #000; box-shadow: 0px 0px 15px rgba(212, 175, 55, 0.5);
+        background: #d4af37; color: #000; 
+        box-shadow: 0px 0px 25px rgba(212, 175, 55, 0.7);
+        transform: translateY(-2px);
     }}
-    .stTabs [aria-selected="true"] {{ background-color: #d4af37 !important; color: black !important; }}
-    .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; margin: 10px 0; }}
-    hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 25px 0; }}
+
+    /* Ranking y Tarjetas */
+    .ranking-row {{ 
+        background: rgba(212, 175, 55, 0.08); padding: 10px; border-radius: 8px; 
+        margin-bottom: 8px; border-left: 4px solid #d4af37;
+    }}
+    .card-pedido {{
+        background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 12px; padding: 15px; margin-bottom: 15px;
+    }}
+
+    @keyframes barLoad {{ from {{ width: 0; }} }}
+    .stProgress > div > div > div > div {{ 
+        background: linear-gradient(90deg, #b8860b, #d4af37) !important; 
+        animation: barLoad 2s ease-out; border-radius: 10px;
+    }}
+
+    .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; }}
+    hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -94,7 +115,6 @@ with st.sidebar:
         ventas_hoy = df_hoy.groupby('Vend')['Monto'].sum().reset_index()
         ranking = pd.merge(df_st, ventas_hoy, left_on='Nombre', right_on='Vend', how='left').fillna(0)
         ranking = ranking.sort_values(by='Monto', ascending=False)
-        
         for _, r in ranking.iterrows():
             meta_ind = meta_diaria / len(df_st) if len(df_st) > 0 else 1000
             progreso_barra = min(r['Monto'] / meta_ind, 1.0)
@@ -106,7 +126,6 @@ with st.sidebar:
     st.write("📅 PROGRESO SEMANAL")
     st.metric("VENTA SEMANA", f"${v_sem:,.2f}")
     st.progress(min(v_sem / meta_semanal, 1.0))
-    # AGREGADO: Caption de Meta Semanal solicitado
     st.caption(f"Objetivo Semanal: ${meta_semanal:,.0f}")
     
     st.markdown("---")
@@ -162,7 +181,7 @@ with tab_p: # CONTROL DE PEDIDOS
             if c_ok.button("✅ ENTREGAR", key=f"btn_ok_{row['ID']}"):
                 df_v.at[idx, 'Est'] = "Entregado"; df_v.to_csv(db_v, index=False); st.rerun()
             costo_reenvio = c_monto.number_input(f"Costo Reenvío $", min_value=0.0, value=0.0, step=10.0, key=f"num_gar_{row['ID']}")
-            if c_gar.button("🔄 GARANTÍA (CAÍDO)", key=f"btn_gar_{row['ID']}"):
+            if c_gar.button("🔄 GARANTÍA", key=f"btn_gar_{row['ID']}"):
                 df_v.at[idx, 'Est'] = "Entregado (Siniestro)"
                 nid_new = int(df_v['ID'].max() + 1)
                 nv_gar = pd.DataFrame([{"ID": nid_new, "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"), "Vend": row['Vend'], "Cli": row['Cli'] + " (REPO)", "Tel": row['Tel'], "Prod": f"[GARANTÍA] {row['Prod']}", "Monto": costo_reenvio, "Est": "Pendiente"}])
