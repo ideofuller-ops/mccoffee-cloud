@@ -26,7 +26,6 @@ def preparar():
 
 preparar()
 
-# CARGA DE DATOS
 df_v = pd.read_csv(db_v)
 df_v['Fecha_DT'] = pd.to_datetime(df_v['Fecha'], format="%d/%m/%Y %H:%M", errors='coerce')
 df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df_st = pd.read_csv(db_st)
@@ -34,7 +33,7 @@ df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO "ORO PURO" (SIN FANTASMAS Y BRILLO CONTROLADO) ---
+# --- 🎨 ESTILO "ORO PURO" (LIMPIEZA TOTAL DE FANTASMAS) ---
 st.markdown(f"""
     <style>
     .stApp {{ 
@@ -46,49 +45,46 @@ st.markdown(f"""
         text-shadow: 0px 4px 15px rgba(212, 175, 55, 0.4); margin: 20px 0;
     }}
 
-    /* PESTAÑAS (TABS) - BRILLO INTERNO SIN DESBORDAMIENTO */
+    /* PESTAÑAS (TABS) - BRILLO INTERNO LIMPIO SIN "SANGRE" DE LUZ */
     .stTabs [data-baseweb="tab-list"] {{ gap: 10px; background-color: transparent; }}
     .stTabs [data-baseweb="tab"] {{
         background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px 10px 0 0;
+        border-radius: 12px 12px 0 0;
         color: #888;
         padding: 10px 20px;
         border: 1px solid rgba(212, 175, 55, 0.1);
-        box-shadow: none !important;
     }}
     .stTabs [aria-selected="true"] {{
         background: linear-gradient(180deg, #f1c40f, #d4af37) !important;
         color: black !important;
         font-weight: bold;
-        /* Brillo interno para que se vea iluminado pero NO se salga del botón */
         box-shadow: inset 0px 0px 12px rgba(255, 255, 255, 0.7) !important;
         border: none !important;
     }}
 
-    /* BOTONES PREMIUM (GLOW LIMPIO) */
+    /* BOTONES PREMIUM (BRILLO CONTROLADO) */
     .stButton>button {{ 
-        border: 2px solid #f1c40f; border-radius: 6px; 
+        border: 2px solid #f1c40f; border-radius: 8px; 
         background: linear-gradient(145deg, #1a1a1a, #000); color: #f1c40f; font-weight: 800;
         transition: 0.3s; width: 100%;
-        box-shadow: none !important;
     }}
     .stButton>button:hover {{ 
         background: #f1c40f; color: #000; 
-        box-shadow: 0px 0px 15px rgba(241, 196, 15, 0.5) !important;
+        box-shadow: 0px 0px 15px rgba(241, 196, 15, 0.6) !important;
     }}
 
-    /* Tarjetas de Pedidos y Ranking (Vidrio Real) */
+    /* TARJETAS DE PEDIDO (SOLO DONDE HAY DATOS) */
     .card-pedido {{
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(212, 175, 55, 0.3);
-        border-radius: 12px; padding: 15px; margin-bottom: 15px;
-        backdrop-filter: blur(5px);
+        border-radius: 15px; padding: 15px; margin-bottom: 15px;
     }}
+
     .ranking-row {{ 
         background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; 
         margin-bottom: 5px; border-left: 3px solid #d4af37; font-size: 14px;
     }}
-    @keyframes barLoad {{ from {{ width: 0; }} to {{ width: 100%; }} }}
+    @keyframes barLoad {{ from {{ width: 0; }} }}
     .stProgress > div > div > div > div {{ 
         background: linear-gradient(90deg, #b8860b, #d4af37) !important; 
         animation: barLoad 1.5s ease-in-out; border-radius: 8px;
@@ -96,6 +92,9 @@ st.markdown(f"""
 
     .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; }}
     hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); }}
+    
+    /* ELIMINACIÓN DE CONTENEDORES VACÍOS DE STREAMLIT */
+    div[data-testid="stVerticalBlock"] > div:empty {{ display: none !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -137,7 +136,7 @@ with st.sidebar:
         p_u = df_p[df_p['Cod'] == s['Cod']]['Uni'].values[0] if not df_p[df_p['Cod'] == s['Cod']].empty else ""
         st.markdown(f"<p style='color: #d4af37; margin:0; font-size:14px;'>{s['Cod']}: <b>{s['Cant']} {p_u}</b></p>", unsafe_allow_html=True)
 
-# --- 3. PESTAÑAS (SIN CONTENEDORES VACÍOS) ---
+# --- 3. PESTAÑAS (CORREGIDAS SIN FANTASMAS) ---
 tab_v, tab_p, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "🔐 PANEL JEFE"])
 
 with tab_v: # REGISTRO DE VENTAS
@@ -176,7 +175,6 @@ with tab_p: # CONTROL DE PEDIDOS
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
-        # Cada pedido envuelto en su tarjeta de vidrio
         st.markdown(f"<div class='card-pedido'>", unsafe_allow_html=True)
         st.markdown(f"*{color_ico} #{row['ID']} | {row['Vend']}* | {row['Cli']} | Total: *${row['Monto']:,.2f}*")
         st.caption(f"📦 {row['Prod']} ({row['Est']})")
