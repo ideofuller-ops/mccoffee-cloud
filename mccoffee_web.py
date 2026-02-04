@@ -26,7 +26,6 @@ def preparar():
 
 preparar()
 
-# CARGA DE DATOS (Sin cambios)
 df_v = pd.read_csv(db_v)
 df_v['Fecha_DT'] = pd.to_datetime(df_v['Fecha'], format="%d/%m/%Y %H:%M", errors='coerce')
 df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df_st = pd.read_csv(db_st)
@@ -34,66 +33,63 @@ df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO "DIAMANTE" (SIN ÓVALOS FANTASMA Y MÁS ALTO) ---
+# --- 🎨 ESTILO "DIAMANTE NEGRO" (LIMPIEZA TOTAL DE FANTASMAS) ---
 st.markdown(f"""
     <style>
-    /* 1. PEGAR LA APP AL TOPE (Elimina el hueco de arriba) */
-    .block-container {{
-        padding-top: 1rem !important;
-        padding-bottom: 0rem !important;
-    }}
-
+    /* Fondo General */
     .stApp {{ 
-        background: radial-gradient(circle at 10% 10%, rgba(212, 175, 55, 0.08) 0%, #050505 50%),
-                    radial-gradient(circle at 90% 90%, rgba(212, 175, 55, 0.08) 0%, #050505 50%);
+        background: radial-gradient(circle at top left, #1a1a1a 0%, #050505 100%);
         color: white; 
     }}
 
+    /* Título Impactante */
     .titulo-mccoffee {{ 
-        text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 35px; line-height: 1;
-        text-shadow: 0px 0px 15px rgba(212, 175, 55, 0.5); margin-bottom: 15px;
+        text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 42px; line-height: 1.1;
+        text-shadow: 0px 4px 15px rgba(212, 175, 55, 0.4); margin-bottom: 25px;
     }}
 
-    /* 2. PESTAÑAS (TABS) - EL ESTILO AMARILLO CHIDO CON BRILLO INTERNO */
+    /* PESTAÑAS (TABS) - EL ESTILO CHIDO CON BRILLO INTERNO */
     .stTabs [data-baseweb="tab-list"] {{ gap: 10px; background-color: transparent; }}
     .stTabs [data-baseweb="tab"] {{
         background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px 10px 0 0;
+        border-radius: 12px 12px 0 0;
         color: #888;
-        padding: 8px 18px;
-        transition: 0.3s;
+        padding: 10px 20px;
         border: 1px solid rgba(212, 175, 55, 0.1);
+        transition: 0.3s;
     }}
     .stTabs [aria-selected="true"] {{
         background: linear-gradient(180deg, #f1c40f, #d4af37) !important;
         color: black !important;
         font-weight: bold;
+        /* Brillo interno para que se vea potente pero NO se salga del botón */
         box-shadow: inset 0px 0px 15px rgba(255, 255, 255, 0.6) !important;
         border: none !important;
     }}
 
-    /* 3. BOTONES CON EL GLOW AMARILLO LIMPIO */
+    /* BOTONES PREMIUM */
     .stButton>button {{ 
-        border: 2px solid #f1c40f; border-radius: 6px; 
+        border: 2px solid #f1c40f; border-radius: 8px; 
         background: linear-gradient(145deg, #1a1a1a, #000); color: #f1c40f; font-weight: 800;
         transition: 0.3s; width: 100%;
     }}
     .stButton>button:hover {{ 
         background: #f1c40f; color: #000; 
-        box-shadow: 0px 0px 15px rgba(241, 196, 15, 0.6) !important;
+        box-shadow: 0px 0px 15px rgba(241, 196, 15, 0.5) !important;
     }}
 
-    /* 4. TARJETAS DE PEDIDO (Solo se aplican a los datos, no a huecos vacíos) */
+    /* ELIMINACIÓN DE CONTENEDORES VACÍOS (CHAU ÓVALO FANTASMA) */
+    div[data-testid="stVerticalBlock"] > div:empty {{ display: none !important; }}
+    
+    /* Diseño de Filas y Pedidos */
     .card-pedido {{
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(212, 175, 55, 0.3);
-        border-radius: 12px; padding: 15px; margin-bottom: 12px;
+        border-radius: 12px; padding: 15px; margin-bottom: 15px;
     }}
-
-    /* 5. DISEÑO DE RANKING */
     .ranking-row {{ 
-        background: rgba(212, 175, 55, 0.08); padding: 10px; border-radius: 8px; 
-        margin-bottom: 8px; border-left: 4px solid #d4af37;
+        background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; 
+        margin-bottom: 5px; border-left: 3px solid #d4af37; font-size: 14px;
     }}
     @keyframes barLoad {{ from {{ width: 0; }} }}
     .stProgress > div > div > div > div {{ 
@@ -102,10 +98,7 @@ st.markdown(f"""
     }}
 
     .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; }}
-    hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 20px 0; }}
-    
-    /* ELIMINA CUALQUIER BLOQUE VACÍO QUE GENERE ÓVALOS FANTASMA */
-    div[data-testid="stVerticalBlock"] > div:empty {{ display: none !important; }}
+    hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -139,7 +132,7 @@ with st.sidebar:
     st.write("📅 PROGRESO SEMANAL")
     st.metric("VENTA SEMANA", f"${v_sem:,.2f}")
     st.progress(min(v_sem / meta_semanal, 1.0))
-    # META SEMANAL QUE PEDISTE
+    # Aquí está la meta semanal que pediste
     st.caption(f"Objetivo Semanal: ${meta_semanal:,.0f}")
     
     st.markdown("---")
@@ -187,7 +180,6 @@ with tab_p: # CONTROL DE PEDIDOS
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
-        
         st.markdown(f"<div class='card-pedido'>", unsafe_allow_html=True)
         st.markdown(f"*{color_ico} #{row['ID']} | {row['Vend']}* | {row['Cli']} | Total: *${row['Monto']:,.2f}*")
         st.caption(f"📦 {row['Prod']} ({row['Est']})")
