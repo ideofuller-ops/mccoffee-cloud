@@ -35,7 +35,7 @@ df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO ULTRA PREMIUM ---
+# --- 🎨 ESTILO ULTRA PREMIUM (DISEÑO SOLICITADO) ---
 st.markdown(f"""
     <style>
     .stApp {{ 
@@ -114,7 +114,7 @@ with st.sidebar:
 # --- 3. PESTAÑAS ---
 tab_v, tab_p, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "🔐 PANEL JEFE"])
 
-with tab_v: 
+with tab_v: # REGISTRO DE VENTAS
     st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3); l_st = df_st['Nombre'].tolist() if not df_st.empty else ["CONFIGURAR STAFF"]
     v_v = c1.selectbox("Vendedor", l_st, key="v_sel_1")
@@ -144,12 +144,10 @@ with tab_v:
                 mk = (df_a['Vendedor'] == v_v) & (df_a['Cod'] == i['Cod'])
                 if mk.any(): df_a.loc[mk, 'Vendido'] += i['Cant']; df_a.loc[mk, 'Actual'] -= i['Cant']
                 else: df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": v_v, "Cod": i['Cod'], "Entregado": 0, "Vendido": i['Cant'], "Actual": -i['Cant']}])])
-            
-            # --- CORRECCIÓN AQUÍ (db_a en lugar de df_a) ---
             pd.concat([df_v, nv]).to_csv(db_v, index=False); df_a.to_csv(db_a, index=False); st.session_state.car = []; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-with tab_p: 
+with tab_p: # CONTROL DE PEDIDOS
     pedidos_ordenados = df_v.sort_values(by=['Est', 'ID'], ascending=[False, False]).head(20)
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
@@ -173,7 +171,7 @@ with tab_p:
                 df_v.at[idx, 'Est'] = "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-with tab_j: 
+with tab_j: # PANEL JEFE
     st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     pw = st.text_input("Contraseña", type="password")
     if pw == CLAVE_MAESTRA:
@@ -202,8 +200,6 @@ with tab_j:
                     mk = (df_a['Vendedor'] == cv) & (df_a['Cod'] == cp)
                     if mk.any(): df_a.loc[mk, 'Entregado'] += cn; df_a.loc[mk, 'Actual'] += cn
                     else: df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": cv, "Cod": cp, "Entregado": cn, "Vendido": 0, "Actual": cn}])])
-                    
-                    # --- CORRECCIÓN AQUÍ (db_a en lugar de df_a) ---
                     df_s.to_csv(db_s, index=False); df_a.to_csv(db_a, index=False); st.rerun()
 
         with st.expander("👥 STAFF Y CATÁLOGO"):
@@ -220,6 +216,10 @@ with tab_j:
         ce2.download_button("📥 Mochilas", df_a.to_csv(index=False), "mochilas.csv")
         ce3.download_button("📥 Bóveda", df_s.to_csv(index=False), "boveda.csv")
         
-        st.error("🚨 REINICIO")
-        if st.button("BORRAR TODO", key="r2"): [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
+        # --- SECCIÓN DE REINICIO RESTAURADA ---
+        st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
+        if r1.button("LIMPIAR VENTAS", key="r_1"): 
+            pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
+        if r2.button("BORRAR TODO", key="r_2"): 
+            [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
