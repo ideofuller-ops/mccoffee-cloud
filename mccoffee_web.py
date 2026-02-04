@@ -61,7 +61,7 @@ with st.sidebar:
     st.progress(min(v_hoy / meta_diaria, 1.0))
     st.caption(f"Meta Diaria: ${meta_diaria:,.0f}")
     
-    # --- NUEVA FUNCIÓN: RANKING DE VENDEDORES ---
+    # --- RANKING DE VENDEDORES (ACTUALIZADO: TEXTO CON % META TOTAL) ---
     st.markdown("---")
     st.markdown("### 🏆 RANKING DIARIO")
     if not df_st.empty:
@@ -71,11 +71,16 @@ with st.sidebar:
         ranking = ranking.sort_values(by='Monto', ascending=False)
         
         for _, r in ranking.iterrows():
-            # Meta simbólica individual para la barra (Meta diaria / num vendedores)
+            # 1. Calculamos el progreso visual de la barra (Meta Individual Simbólica) - ESTO NO SE TOCA
             meta_ind = meta_diaria / len(df_st) if len(df_st) > 0 else 1000
-            progreso = min(r['Monto'] / meta_ind, 1.0)
-            st.markdown(f"""<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span style='color:#d4af37'>${r['Monto']:,.0f}</span></div></div>""", unsafe_allow_html=True)
-            st.progress(progreso)
+            progreso_barra = min(r['Monto'] / meta_ind, 1.0)
+            
+            # 2. Calculamos el Porcentaje REAL sobre la META TOTAL para el texto
+            porcentaje_real = (r['Monto'] / meta_diaria * 100) if meta_diaria > 0 else 0
+            
+            # Mostramos: Nombre | Dinero (Porcentaje%)
+            st.markdown(f"""<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span style='color:#d4af37'>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span></div></div>""", unsafe_allow_html=True)
+            st.progress(progreso_barra)
     # --------------------------------------------
 
     st.markdown("---")
@@ -99,7 +104,7 @@ with tab_v: # REGISTRO DE VENTAS
     v_v = c1.selectbox("Vendedor", l_st, key="v_sel_1")
     v_c = c2.text_input("Cliente").upper(); v_t = c3.text_input("WhatsApp")
     
-    # --- NUEVA FUNCIÓN: PRECIO EDITABLE ---
+    # --- PRECIO EDITABLE ---
     c4, c5, c6, c7 = st.columns([2, 1, 1, 1]) 
     v_p = c4.selectbox("Producto", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="v_sel_2")
     
@@ -182,6 +187,12 @@ with tab_p: # CONTROL DE PEDIDOS
                     df_v.to_csv(db_v, index=False)
                     st.warning(f"Garantía aplicada. Nuevo pedido #{nid_new} generado."); st.rerun()
                 # -------------------------------------------
+            else:
+                # --- BOTÓN DE CORRECCIÓN AÑADIDO (PARA VOLVER A PENDIENTE) ---
+                if st.button("↩️ CORREGIR (VOLVER A PENDIENTE)", key=f"btn_fix_{row['ID']}"):
+                    df_v.at[idx, 'Est'] = "Pendiente"
+                    df_v.to_csv(db_v, index=False); st.rerun()
+            
             st.markdown("---")
 
 with tab_j: # PANEL JEFE
