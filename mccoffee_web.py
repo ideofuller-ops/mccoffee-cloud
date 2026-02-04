@@ -29,21 +29,21 @@ def preparar():
 
 preparar()
 
-# CARGA DE DATOS
 df_v = pd.read_csv(db_v)
-# Convertimos a datetime naive (sin zona horaria) para comparar con el CSV
+# Convertimos a datetime naive (sin zona horaria) para que no truene el sidebar
 df_v['Fecha_DT'] = pd.to_datetime(df_v['Fecha'], dayfirst=True, errors='coerce').dt.tz_localize(None)
 df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df_st = pd.read_csv(db_st)
 
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO "DIAMANTE NEGRO" PREMIUM ---
+# --- 🎨 ESTILO "ORO PURO" (PESTAÑAS GARANTIZADAS) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
     
-    .block-container {{ padding-top: 1rem !important; }}
+    /* MARGEN DE SEGURIDAD PARA QUE SE VEAN LAS PESTAÑAS */
+    .block-container {{ padding-top: 3.5rem !important; }}
 
     .stApp {{ 
         background: radial-gradient(circle at top left, #1a1a1a 0%, #050505 100%);
@@ -61,15 +61,24 @@ st.markdown(f"""
         background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 15px;
     }}
 
-    .stTabs [data-baseweb="tab-list"] {{ gap: 10px; background-color: transparent; }}
+    /* DISEÑO DE PESTAÑAS - AHORA MÁS BRILLANTES */
+    .stTabs [data-baseweb="tab-list"] {{ 
+        gap: 10px; 
+        background-color: rgba(0,0,0,0.5) !important; 
+        padding: 5px;
+        border-radius: 12px 12px 0 0;
+    }}
     .stTabs [data-baseweb="tab"] {{
-        background: rgba(255, 255, 255, 0.05); border-radius: 12px 12px 0 0;
-        color: #888; padding: 10px 20px; border: 1px solid rgba(212, 175, 55, 0.1);
+        background: rgba(255, 255, 255, 0.1); 
+        border-radius: 10px 10px 0 0;
+        color: #d4af37 !important; /* Color dorado para que se lean bien */
+        padding: 10px 15px; 
+        border: 1px solid rgba(212, 175, 55, 0.2);
     }}
     .stTabs [aria-selected="true"] {{
         background: linear-gradient(180deg, #f1c40f, #d4af37) !important;
         color: black !important; font-weight: bold;
-        box-shadow: inset 0px 0px 15px rgba(255, 255, 255, 0.6) !important;
+        box-shadow: 0px 0px 20px rgba(241, 196, 15, 0.6) !important;
     }}
 
     .stButton>button {{ 
@@ -87,13 +96,13 @@ st.markdown(f"""
     }}
     
     .time-badge-fixed {{
-        background: rgba(212, 175, 55, 0.15); color: #f1c40f; padding: 4px 10px;
+        background: rgba(212, 175, 55, 0.2); color: #f1c40f; padding: 4px 10px;
         border-radius: 6px; font-size: 11px; font-family: 'Orbitron', sans-serif;
-        border: 1px solid rgba(241, 196, 15, 0.4); white-space: nowrap;
+        border: 1px solid rgba(241, 196, 15, 0.5);
     }}
 
     .feed-item {{
-        padding: 8px; background: rgba(212, 175, 55, 0.05); border-left: 4px solid #f1c40f;
+        padding: 8px; background: rgba(212, 175, 55, 0.1); border-left: 4px solid #f1c40f;
         margin-bottom: 5px; border-radius: 4px; font-size: 13px;
     }}
 
@@ -103,19 +112,17 @@ st.markdown(f"""
     }}
 
     .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; }}
-    div[data-testid="stVerticalBlock"] > div:empty {{ display: none !important; }}
     hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. SIDEBAR (RELOJ + RANKING) ---
+# --- 2. SIDEBAR ---
 with st.sidebar:
     st.markdown("<h1 class='titulo-mccoffee'>CONTROL TOTAL<br>MCCOFFEE</h1>", unsafe_allow_html=True)
     
     ahora_mx = datetime.now(ZONA_HORARIA)
     st.markdown(f"<div class='live-clock'>🕒 {ahora_mx.strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
     
-    # Manejo de tiempo para comparaciones
     ahora_naive = ahora_mx.replace(tzinfo=None)
     hoy = ahora_naive.date()
     
@@ -153,7 +160,7 @@ with st.sidebar:
         p_u = df_p[df_p['Cod'] == s['Cod']]['Uni'].values[0] if not df_p[df_p['Cod'] == s['Cod']].empty else ""
         st.markdown(f"<p style='color: #d4af37; margin:0; font-size:14px;'>{s['Cod']}: <b>{s['Cant']} {p_u}</b></p>", unsafe_allow_html=True)
 
-# --- 3. PESTAÑAS ---
+# --- 3. PESTAÑAS (CORREGIDAS) ---
 tab_v, tab_p, tab_d, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "📊 DASHBOARD", "🔐 PANEL JEFE"])
 
 with tab_v: # REGISTRO DE VENTAS
@@ -221,18 +228,18 @@ with tab_p: # CONTROL DE PEDIDOS
             if st.button("↩️ CORREGIR", key=f"btn_fix_{row['ID']}"):
                 df_v.at[idx, 'Est'] = "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
 
-with tab_d: # 📊 DASHBOARD MAMA-LÓN
+with tab_d: # 📊 DASHBOARD
     st.markdown("### 👑 ESTRATEGIA MCCOFFEE")
     c_met1, c_met2, c_met3 = st.columns(3)
     c_met1.metric("TICKET PROM.", f"${(df_v['Monto'].mean() if not df_v.empty else 0):,.2f}")
     c_met2.metric("TOTAL VENTAS", len(df_v))
     c_met3.metric("SINIESTROS", len(df_v[df_v['Est'].str.contains("Siniestro")]))
-
-    st.markdown("#### 🔥 PULSO MCCOFFEE (LIVE FEED)")
+    
+    st.markdown("#### 🔥 PULSO MCCOFFEE (LIVE)")
     for _, l in df_v.sort_values(by='ID', ascending=False).head(5).iterrows():
         h_f = l['Fecha'].split(' ')[1] if ' ' in l['Fecha'] else ""
         st.markdown(f"<div class='feed-item'><b>{h_f}</b> | <b>{l['Vend']}</b> cerró venta de ${l['Monto']:,.0f} a {l['Cli']}</div>", unsafe_allow_html=True)
-
+    
     st.markdown("---")
     cg1, cg2 = st.columns([2, 1])
     with cg1:
@@ -241,19 +248,18 @@ with tab_d: # 📊 DASHBOARD MAMA-LÓN
             df_v['H'] = df_v['Fecha_DT'].dt.hour
             v_h = df_v.groupby('H')['Monto'].sum().reset_index()
             fig = go.Figure(go.Scatter(x=v_h['H'], y=v_h['Monto'], mode='lines+markers', line=dict(color='#f1c40f', width=4), fill='tozeroy', fillcolor='rgba(212, 175, 55, 0.1)'))
-            fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=300, margin=dict(l=0,r=0,t=0,b=0))
+            fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=300)
             st.plotly_chart(fig, use_container_width=True)
             pico = v_h.loc[v_h['Monto'].idxmax(), 'H'] if not v_h.empty else 0
-            st.warning(f"🎯 VENTANA DE IMPACTO DETECTADA: *{pico}:00 HRS*. Los datos confirman máxima efectividad de cierre.")
-    
+            st.info(f"🎯 VENTANA DE IMPACTO DETECTADA: *{pico}:00 HRS*. Los datos confirman máxima efectividad de cierre.")
     with cg2:
         st.write("🏎️ META SEMANAL")
-        porc_w = min(v_sem / meta_semanal * 100, 100) if meta_semanal > 0 else 0
-        fig_g = go.Figure(go.Indicator(mode="gauge+number", value=porc_w, gauge={'bar':{'color':'#f1c40f'}, 'bgcolor':'rgba(255,255,255,0.05)', 'axis':{'range':[0,100]}}))
-        fig_g.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color':"white"}, height=300, margin=dict(l=20,r=20,t=0,b=0))
+        porc = min(v_sem / meta_semanal * 100, 100) if meta_semanal > 0 else 0
+        fig_g = go.Figure(go.Indicator(mode="gauge+number", value=porc, gauge={'bar':{'color':'#f1c40f'}, 'bgcolor':'rgba(255,255,255,0.05)'}))
+        fig_g.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color':"white"}, height=300)
         st.plotly_chart(fig_g, use_container_width=True)
 
-with tab_j: # PANEL JEFE
+with tab_j: # PANEL JEFE (LÓGICA INTACTA)
     pw = st.text_input("Contraseña", type="password")
     if pw == CLAVE_MAESTRA:
         with st.expander("🎯 CONFIGURAR METAS"):
@@ -263,7 +269,6 @@ with tab_j: # PANEL JEFE
             if st.button("ACTUALIZAR OBJETIVOS"):
                 with open(db_m, "w") as f: f.write(str(nm1))
                 with open(db_mw, "w") as f: f.write(str(nm2)); st.rerun()
-
         st.subheader("🕵️ MONITOR DE AUDITORÍA")
         st.dataframe(df_a, use_container_width=True, hide_index=True)
         c_j1, c_j2 = st.columns(2)
@@ -281,7 +286,6 @@ with tab_j: # PANEL JEFE
                     if mk.any(): df_a.loc[mk, 'Entregado'] += cn; df_a.loc[mk, 'Actual'] += cn
                     else: pd.concat([df_a, pd.DataFrame([{"Vendedor": cv, "Cod": cp, "Entregado": cn, "Vendido": 0, "Actual": cn}])]).to_csv(db_a, index=False)
                     df_s.to_csv(db_s, index=False); df_a.to_csv(db_a, index=False); st.rerun()
-
         with st.expander("👥 STAFF Y CATÁLOGO"):
             cs1, cs2 = st.columns(2); nv = cs1.text_input("Nuevo Vendedor", key="j_t1")
             if cs2.button("Registrar Vendedor", key="j_b1"): pd.concat([df_st, pd.DataFrame([{"Nombre": nv.upper()}])]).drop_duplicates().to_csv(db_st, index=False); st.rerun()
@@ -290,7 +294,6 @@ with tab_j: # PANEL JEFE
             pc, pn, pp, pu = f1.text_input("Clave", key="p1"), f2.text_input("Nombre", key="p2"), f3.number_input("$", key="p3"), f4.text_input("Uni", key="p4")
             if st.button("Guardar Producto Nuevo", key="pb1"):
                 if pc: pd.concat([df_p, pd.DataFrame([{"Cod": pc.upper(), "Nom": pn, "Pre": pp, "Uni": pu}])]).to_csv(db_p, index=False); pd.concat([df_s, pd.DataFrame([{"Cod": pc.upper(), "Cant": 0}])]).to_csv(db_s, index=False); st.rerun()
-
         st.info("📊 EXPORTAR REPORTES"); ce1, ce2, ce3 = st.columns(3)
         ce1.download_button("📥 Ventas", df_v.to_csv(index=False), "ventas.csv")
         ce2.download_button("📥 Mochilas", df_a.to_csv(index=False), "mochilas.csv")
