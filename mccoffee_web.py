@@ -49,7 +49,7 @@ st.markdown(f"""
 
 # --- 2. SIDEBAR (REPORTES) ---
 with st.sidebar:
-    st.markdown("<h1 class='titulo-mccoffee'>MCCOFFEE</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='titulo-mccoffee'>CONTROL TOTAL MCCOFFEE</h1>", unsafe_allow_html=True)
     st.markdown("---")
     hoy = datetime.now().date()
     # Filtro para datos de hoy
@@ -254,4 +254,5 @@ with tab_j: # PANEL JEFE
         st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
         if r1.button("LIMPIAR VENTAS", key="r_1"): pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
         if r2.button("BORRAR TODO", key="r_2"): [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
+
 
