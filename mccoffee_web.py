@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="MCCOFFEE", layout="wide")
 CLAVE_MAESTRA = "mccoffee2026"
 
-# Rutas de archivos
 db_v, db_p, db_s, db_a, db_st, db_m, db_mw = "base_ventas.csv", "base_productos.csv", "base_stock.csv", "base_auditoria.csv", "base_staff.csv", "meta.txt", "meta_semanal.txt"
 
 def preparar():
@@ -27,7 +26,6 @@ def preparar():
 
 preparar()
 
-# CARGA DE DATOS
 df_v = pd.read_csv(db_v)
 df_v['Fecha_DT'] = pd.to_datetime(df_v['Fecha'], format="%d/%m/%Y %H:%M", errors='coerce')
 df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df_st = pd.read_csv(db_st)
@@ -35,7 +33,7 @@ df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO ULTRA PREMIUM (DISEÑO SOLICITADO) ---
+# --- 🎨 ESTILO ULTRA PREMIUM (SIN CUADROS FANTASMA) ---
 st.markdown(f"""
     <style>
     .stApp {{ 
@@ -47,10 +45,11 @@ st.markdown(f"""
         text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 40px; line-height: 1;
         text-shadow: 0px 0px 15px rgba(212, 175, 55, 0.5); margin-bottom: 20px;
     }}
-    .glass-card {{
-        background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px);
-        border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 15px;
-        padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+    /* Diseño de los inputs y áreas de trabajo */
+    [data-testid="stVerticalBlock"] {{
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
     }}
     @keyframes loadBar {{ from {{ width: 0; }} }}
     .stProgress > div > div > div > div {{ 
@@ -95,7 +94,7 @@ with st.sidebar:
             meta_ind = meta_diaria / len(df_st) if len(df_st) > 0 else 1000
             progreso_barra = min(r['Monto'] / meta_ind, 1.0)
             porcentaje_real = (r['Monto'] / meta_diaria * 100) if meta_diaria > 0 else 0
-            st.markdown(f"""<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span style='color:#d4af37'>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span></div></div>""", unsafe_allow_html=True)
+            st.markdown(f"<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span style='color:#d4af37'>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span></div></div>", unsafe_allow_html=True)
             st.progress(progreso_barra)
 
     st.markdown("---")
@@ -115,7 +114,6 @@ with st.sidebar:
 tab_v, tab_p, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "🔐 PANEL JEFE"])
 
 with tab_v: # REGISTRO DE VENTAS
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3); l_st = df_st['Nombre'].tolist() if not df_st.empty else ["CONFIGURAR STAFF"]
     v_v = c1.selectbox("Vendedor", l_st, key="v_sel_1")
     v_c = c2.text_input("Cliente").upper(); v_t = c3.text_input("WhatsApp")
@@ -145,14 +143,12 @@ with tab_v: # REGISTRO DE VENTAS
                 if mk.any(): df_a.loc[mk, 'Vendido'] += i['Cant']; df_a.loc[mk, 'Actual'] -= i['Cant']
                 else: df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": v_v, "Cod": i['Cod'], "Entregado": 0, "Vendido": i['Cant'], "Actual": -i['Cant']}])])
             pd.concat([df_v, nv]).to_csv(db_v, index=False); df_a.to_csv(db_a, index=False); st.session_state.car = []; st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_p: # CONTROL DE PEDIDOS
     pedidos_ordenados = df_v.sort_values(by=['Est', 'ID'], ascending=[False, False]).head(20)
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
         st.markdown(f"*{color_ico} #{row['ID']} | {row['Vend']}* | {row['Cli']} | Total: ${row['Monto']:,.2f}")
         st.caption(f"📦 {row['Prod']} ({row['Est']})")
         
@@ -169,10 +165,9 @@ with tab_p: # CONTROL DE PEDIDOS
         else:
             if st.button("↩️ CORREGIR", key=f"btn_fix_{row['ID']}"):
                 df_v.at[idx, 'Est'] = "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("---")
 
 with tab_j: # PANEL JEFE
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     pw = st.text_input("Contraseña", type="password")
     if pw == CLAVE_MAESTRA:
         with st.expander("🎯 CONFIGURAR METAS"):
@@ -216,10 +211,8 @@ with tab_j: # PANEL JEFE
         ce2.download_button("📥 Mochilas", df_a.to_csv(index=False), "mochilas.csv")
         ce3.download_button("📥 Bóveda", df_s.to_csv(index=False), "boveda.csv")
         
-        # --- SECCIÓN DE REINICIO RESTAURADA ---
         st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
         if r1.button("LIMPIAR VENTAS", key="r_1"): 
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
         if r2.button("BORRAR TODO", key="r_2"): 
             [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
