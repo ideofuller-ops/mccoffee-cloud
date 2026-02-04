@@ -33,40 +33,68 @@ df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO ULTRA PREMIUM (SIN CUADROS FANTASMA) ---
+# --- 🎨 ESTILO "DIAMANTE NEGRO" (LIMPIO Y PREMIUM) ---
 st.markdown(f"""
     <style>
+    /* Fondo con degradado profundo */
     .stApp {{ 
-        background: radial-gradient(circle at 10% 10%, rgba(212, 175, 55, 0.08) 0%, #050505 50%),
-                    radial-gradient(circle at 90% 90%, rgba(212, 175, 55, 0.08) 0%, #050505 50%);
+        background: radial-gradient(circle at top left, #1a1a1a 0%, #050505 100%);
         color: white; 
     }}
+
+    /* Título Impactante */
     .titulo-mccoffee {{ 
-        text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 40px; line-height: 1;
-        text-shadow: 0px 0px 15px rgba(212, 175, 55, 0.5); margin-bottom: 20px;
+        text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 42px; line-height: 1.1;
+        text-shadow: 0px 4px 10px rgba(0,0,0,0.5); margin: 20px 0;
     }}
-    /* Diseño de los inputs y áreas de trabajo */
-    [data-testid="stVerticalBlock"] {{
-        background: rgba(255, 255, 255, 0.02);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
+
+    /* Tarjetas de Cristal Real (Sin cuadros fantasmas) */
+    div.stText, div.stMarkdown, .stSelectbox, .stNumberInput, .stTextInput {{
+        margin-bottom: 5px;
     }}
-    @keyframes loadBar {{ from {{ width: 0; }} }}
+
+    /* Estilo para los contenedores de Pedidos y Ventas */
+    .card-pedido {{
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 2px 2px 15px rgba(0,0,0,0.4);
+    }}
+
+    /* Ranking con Animación */
+    @keyframes barLoad {{ from {{ width: 0; }} to {{ width: 100%; }} }}
     .stProgress > div > div > div > div {{ 
-        background: linear-gradient(90deg, #d4af37, #f7e08a) !important; 
-        animation: loadBar 2s ease-out; border-radius: 10px;
+        background: linear-gradient(90deg, #b8860b, #d4af37) !important; 
+        animation: barLoad 1.5s ease-in-out;
+        border-radius: 8px;
     }}
+
     .ranking-row {{ 
-        background: rgba(212, 175, 55, 0.07); padding: 10px; border-radius: 8px; 
-        margin-bottom: 8px; border-left: 4px solid #d4af37; 
+        background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; 
+        margin-bottom: 5px; border-left: 3px solid #d4af37; font-size: 14px;
     }}
+
+    /* Botones Dorados */
     .stButton>button {{ 
-        border-radius: 5px; border: 1px solid #d4af37; 
-        background: linear-gradient(145deg, #1a1a1a, #000); color: #d4af37; font-weight: bold;
+        border: 1px solid #d4af37; border-radius: 4px; 
+        background: #000; color: #d4af37; font-weight: 800;
+        transition: 0.3s; width: 100%;
     }}
-    .stButton>button:hover {{ background: #d4af37; color: black; box-shadow: 0px 0px 20px rgba(212, 175, 55, 0.6); }}
-    .total-gigante {{ color: #d4af37; font-size: 60px !important; font-weight: bold; text-align: center; }}
-    hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); }}
+    .stButton>button:hover {{ 
+        background: #d4af37; color: #000; box-shadow: 0px 0px 15px rgba(212, 175, 55, 0.5);
+    }}
+
+    /* Ajuste de Tabs */
+    .stTabs [data-baseweb="tab-list"] {{ gap: 10px; }}
+    .stTabs [data-baseweb="tab"] {{
+        background-color: rgba(255,255,255,0.05); border-radius: 5px 5px 0 0; padding: 10px 20px;
+    }}
+    .stTabs [aria-selected="true"] {{ background-color: #d4af37 !important; color: black !important; }}
+
+    .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; margin: 10px 0; }}
+    hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 25px 0; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -94,21 +122,19 @@ with st.sidebar:
             meta_ind = meta_diaria / len(df_st) if len(df_st) > 0 else 1000
             progreso_barra = min(r['Monto'] / meta_ind, 1.0)
             porcentaje_real = (r['Monto'] / meta_diaria * 100) if meta_diaria > 0 else 0
-            st.markdown(f"<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span style='color:#d4af37'>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span></div></div>", unsafe_allow_html=True)
+            st.markdown(f"""<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span></div></div>""", unsafe_allow_html=True)
             st.progress(progreso_barra)
 
     st.markdown("---")
     st.write("📅 PROGRESO SEMANAL")
     st.metric("VENTA SEMANA", f"${v_sem:,.2f}")
-    st.markdown(f"""<style>div.stProgress > div > div > div > div {{ background-color: #28a745 !important; }}</style>""", unsafe_allow_html=True)
     st.progress(min(v_sem / meta_semanal, 1.0))
-    st.caption(f"Objetivo Semanal: ${meta_semanal:,.0f}")
     
     st.markdown("---")
     st.subheader("📦 BÓVEDA CENTRAL")
     for _, s in df_s.iterrows():
         p_u = df_p[df_p['Cod'] == s['Cod']]['Uni'].values[0] if not df_p[df_p['Cod'] == s['Cod']].empty else ""
-        st.markdown(f"<p style='color: #d4af37; font-weight: bold; margin:0;'>{s['Cod']}: {s['Cant']} {p_u}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: #d4af37; margin:0; font-size:14px;'>{s['Cod']}: <b>{s['Cant']} {p_u}</b></p>", unsafe_allow_html=True)
 
 # --- 3. PESTAÑAS ---
 tab_v, tab_p, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "🔐 PANEL JEFE"])
@@ -149,7 +175,9 @@ with tab_p: # CONTROL DE PEDIDOS
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
-        st.markdown(f"*{color_ico} #{row['ID']} | {row['Vend']}* | {row['Cli']} | Total: ${row['Monto']:,.2f}")
+        
+        st.markdown(f"<div class='card-pedido'>", unsafe_allow_html=True)
+        st.markdown(f"*{color_ico} #{row['ID']} | {row['Vend']}* | {row['Cli']} | Total: *${row['Monto']:,.2f}*")
         st.caption(f"📦 {row['Prod']} ({row['Est']})")
         
         if row['Est'] == "Pendiente":
@@ -165,7 +193,7 @@ with tab_p: # CONTROL DE PEDIDOS
         else:
             if st.button("↩️ CORREGIR", key=f"btn_fix_{row['ID']}"):
                 df_v.at[idx, 'Est'] = "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
-        st.markdown("---")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_j: # PANEL JEFE
     pw = st.text_input("Contraseña", type="password")
