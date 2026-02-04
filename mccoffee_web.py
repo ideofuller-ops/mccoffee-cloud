@@ -1,4 +1,4 @@
-[1:27 p.m., 4/2/2026] L: import streamlit as st
+import streamlit as st
 import pandas as pd
 import os
 import plotly.graph_objects as go
@@ -315,3 +315,4 @@ with tab_j: # PANEL JEFE (TU LÓGICA INTACTA)
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
         if r2.button("BORRAR TODO", key="r_2"): 
             [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
+
