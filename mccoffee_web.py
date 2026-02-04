@@ -34,23 +34,21 @@ df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO "ORO PREMIUM" (CORREGIDO SIN CUADROS FANTASMA) ---
+# --- 🎨 ESTILO "ORO PREMIUM" (CORRECCIÓN DE BRILLO INTERIOR) ---
 st.markdown(f"""
     <style>
-    /* Fondo con Glow Atmosférico */
     .stApp {{ 
         background: radial-gradient(circle at 10% 10%, rgba(212, 175, 55, 0.08) 0%, #050505 50%),
                     radial-gradient(circle at 90% 90%, rgba(212, 175, 55, 0.08) 0%, #050505 50%);
         color: white; 
     }}
 
-    /* Título Imponente */
     .titulo-mccoffee {{ 
         text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 40px; line-height: 1.1;
         text-shadow: 0px 0px 20px rgba(212, 175, 55, 0.6); margin: 20px 0;
     }}
 
-    /* PESTAÑAS (TABS) CON ILUMINACIÓN AMARILLA PREMIUM */
+    /* PESTAÑAS (TABS) CON BRILLO HACIA ADENTRO (MÁS LIMPIO) */
     .stTabs [data-baseweb="tab-list"] {{ gap: 15px; background-color: transparent; }}
     .stTabs [data-baseweb="tab"] {{
         background: rgba(255, 255, 255, 0.03);
@@ -64,30 +62,29 @@ st.markdown(f"""
         background: linear-gradient(180deg, #f1c40f, #d4af37) !important;
         color: black !important;
         font-weight: bold;
-        box-shadow: 0px 0px 25px rgba(241, 196, 15, 0.5);
+        /* CAMBIO: Sombra 'inset' para que el brillo no se salga del botón */
+        box-shadow: inset 0px 0px 15px rgba(255, 255, 255, 0.5) !important;
         border: none !important;
     }}
 
-    /* BOTONES CON EL "GLOW" AMARILLO QUE TE GUSTÓ */
+    /* BOTONES CON BRILLO CONTROLADO */
     .stButton>button {{ 
         border: 2px solid #f1c40f; border-radius: 8px; 
         background: linear-gradient(145deg, #1a1a1a, #000); color: #f1c40f; font-weight: 800;
         transition: 0.4s; width: 100%; height: 50px;
         text-transform: uppercase; letter-spacing: 1.5px;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
     }}
     .stButton>button:hover {{ 
         background: #f1c40f; color: #000; 
-        box-shadow: 0px 0px 30px rgba(241, 196, 15, 0.8);
-        transform: translateY(-3px);
+        /* Brillo más sutil para que no se vea 'manchado' */
+        box-shadow: 0px 0px 15px rgba(241, 196, 15, 0.6);
+        transform: translateY(-2px);
     }}
 
-    /* Ranking con Barras de Oro Real */
     @keyframes barLoad {{ from {{ width: 0; }} }}
     .stProgress > div > div > div > div {{ 
         background: linear-gradient(90deg, #f1c40f, #d4af37) !important; 
         animation: barLoad 2s ease-out; border-radius: 10px;
-        box-shadow: 0px 0px 10px rgba(212, 175, 55, 0.4);
     }}
 
     .ranking-row {{ 
@@ -95,17 +92,12 @@ st.markdown(f"""
         margin-bottom: 10px; border-left: 5px solid #f1c40f;
     }}
 
-    /* Tarjetas de Pedidos Individuales */
     .card-pedido {{
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(241, 196, 15, 0.2);
-        border-radius: 15px;
-        padding: 18px;
-        margin-bottom: 15px;
-        backdrop-filter: blur(5px);
+        background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(241, 196, 15, 0.2);
+        border-radius: 15px; padding: 18px; margin-bottom: 15px;
     }}
 
-    .total-gigante {{ color: #f1c40f; font-size: 58px !important; font-weight: bold; text-align: center; text-shadow: 0px 0px 20px rgba(241, 196, 15, 0.4); }}
+    .total-gigante {{ color: #f1c40f; font-size: 58px !important; font-weight: bold; text-align: center; }}
     hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #f1c40f, transparent); margin: 30px 0; }}
     </style>
     """, unsafe_allow_html=True)
@@ -129,7 +121,6 @@ with st.sidebar:
         ventas_hoy = df_hoy.groupby('Vend')['Monto'].sum().reset_index()
         ranking = pd.merge(df_st, ventas_hoy, left_on='Nombre', right_on='Vend', how='left').fillna(0)
         ranking = ranking.sort_values(by='Monto', ascending=False)
-        
         for _, r in ranking.iterrows():
             meta_ind = meta_diaria / len(df_st) if len(df_st) > 0 else 1000
             progreso_barra = min(r['Monto'] / meta_ind, 1.0)
@@ -149,7 +140,7 @@ with st.sidebar:
         p_u = df_p[df_p['Cod'] == s['Cod']]['Uni'].values[0] if not df_p[df_p['Cod'] == s['Cod']].empty else ""
         st.markdown(f"<p style='color: #f1c40f; margin:0; font-size:14px;'>{s['Cod']}: <b>{s['Cant']} {p_u}</b></p>", unsafe_allow_html=True)
 
-# --- 3. PESTAÑAS (CORREGIDAS SIN CONTENEDORES VACÍOS) ---
+# --- 3. PESTAÑAS ---
 tab_v, tab_p, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "🔐 PANEL JEFE"])
 
 with tab_v: # REGISTRO DE VENTAS
@@ -188,7 +179,6 @@ with tab_p: # CONTROL DE PEDIDOS
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
-        
         st.markdown(f"<div class='card-pedido'>", unsafe_allow_html=True)
         st.markdown(f"*{color_ico} #{row['ID']} | {row['Vend']}* | {row['Cli']} | Total: *${row['Monto']:,.2f}*")
         st.caption(f"📦 {row['Prod']} ({row['Est']})")
