@@ -272,7 +272,7 @@ with tab_p: # CONTROL DE PEDIDOS
                 df_v.at[idx, 'Est'] = "Pendiente"; df_v.to_csv(db_v, index=False); st.rerun()
 
 with tab_d: # 📊 DASHBOARD
-    st.markdown("### 👑 ESTRATEGIA MCCOFFEE")
+    st.markdown("###  ESTRATEGIA MCCOFFEE")
     c_met1, c_met2, c_met3 = st.columns(3)
     c_met1.metric("TICKET PROM.", f"${(df_v['Monto'].mean() if not df_v.empty else 0):,.2f}")
     c_met2.metric("TOTAL VENTAS", len(df_v))
@@ -351,3 +351,4 @@ with tab_j: # PANEL JEFE (LÓGICA INTACTA)
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
         if r2.button("BORRAR TODO", key="r_2"): 
             [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
+
