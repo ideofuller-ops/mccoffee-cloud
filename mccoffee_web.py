@@ -33,50 +33,34 @@ df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
-# --- 🎨 ESTILO "DIAMANTE NEGRO" (LIMPIO Y PREMIUM) ---
+# --- 🎨 ESTILO "DIAMANTE NEGRO" (PREMIUM) ---
 st.markdown(f"""
     <style>
-    /* Fondo con degradado profundo */
     .stApp {{ 
         background: radial-gradient(circle at top left, #1a1a1a 0%, #050505 100%);
         color: white; 
     }}
-
-    /* Título Impactante */
     .titulo-mccoffee {{ 
         text-align: center; color: #d4af37; font-family: 'Impact'; font-size: 42px; line-height: 1.1;
         text-shadow: 0px 4px 10px rgba(0,0,0,0.5); margin: 20px 0;
     }}
-
-    /* Tarjetas de Cristal Real (Sin cuadros fantasmas) */
-    div.stText, div.stMarkdown, .stSelectbox, .stNumberInput, .stTextInput {{
-        margin-bottom: 5px;
-    }}
-
-    /* Estilo para los contenedores de Pedidos y Ventas */
     .card-pedido {{
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(212, 175, 55, 0.3);
         border-radius: 12px;
         padding: 15px;
         margin-bottom: 15px;
-        box-shadow: 2px 2px 15px rgba(0,0,0,0.4);
     }}
-
-    /* Ranking con Animación */
     @keyframes barLoad {{ from {{ width: 0; }} to {{ width: 100%; }} }}
     .stProgress > div > div > div > div {{ 
         background: linear-gradient(90deg, #b8860b, #d4af37) !important; 
         animation: barLoad 1.5s ease-in-out;
         border-radius: 8px;
     }}
-
     .ranking-row {{ 
         background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; 
         margin-bottom: 5px; border-left: 3px solid #d4af37; font-size: 14px;
     }}
-
-    /* Botones Dorados */
     .stButton>button {{ 
         border: 1px solid #d4af37; border-radius: 4px; 
         background: #000; color: #d4af37; font-weight: 800;
@@ -85,14 +69,7 @@ st.markdown(f"""
     .stButton>button:hover {{ 
         background: #d4af37; color: #000; box-shadow: 0px 0px 15px rgba(212, 175, 55, 0.5);
     }}
-
-    /* Ajuste de Tabs */
-    .stTabs [data-baseweb="tab-list"] {{ gap: 10px; }}
-    .stTabs [data-baseweb="tab"] {{
-        background-color: rgba(255,255,255,0.05); border-radius: 5px 5px 0 0; padding: 10px 20px;
-    }}
     .stTabs [aria-selected="true"] {{ background-color: #d4af37 !important; color: black !important; }}
-
     .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; margin: 10px 0; }}
     hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 25px 0; }}
     </style>
@@ -122,13 +99,15 @@ with st.sidebar:
             meta_ind = meta_diaria / len(df_st) if len(df_st) > 0 else 1000
             progreso_barra = min(r['Monto'] / meta_ind, 1.0)
             porcentaje_real = (r['Monto'] / meta_diaria * 100) if meta_diaria > 0 else 0
-            st.markdown(f"""<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span></div></div>""", unsafe_allow_html=True)
+            st.markdown(f"<div class='ranking-row'><div style='display:flex; justify-content:space-between;'><b>{r['Nombre']}</b><span>${r['Monto']:,.0f} ({porcentaje_real:.0f}%)</span></div></div>""", unsafe_allow_html=True)
             st.progress(progreso_barra)
 
     st.markdown("---")
     st.write("📅 PROGRESO SEMANAL")
     st.metric("VENTA SEMANA", f"${v_sem:,.2f}")
     st.progress(min(v_sem / meta_semanal, 1.0))
+    # AGREGADO: Caption de Meta Semanal solicitado
+    st.caption(f"Objetivo Semanal: ${meta_semanal:,.0f}")
     
     st.markdown("---")
     st.subheader("📦 BÓVEDA CENTRAL")
@@ -175,11 +154,9 @@ with tab_p: # CONTROL DE PEDIDOS
     for idx, row in pedidos_ordenados.iterrows():
         color_ico = "🟢" if "Entregado" in row['Est'] else "🟠"
         if "Siniestro" in row['Est']: color_ico = "🔴"
-        
         st.markdown(f"<div class='card-pedido'>", unsafe_allow_html=True)
         st.markdown(f"*{color_ico} #{row['ID']} | {row['Vend']}* | {row['Cli']} | Total: *${row['Monto']:,.2f}*")
         st.caption(f"📦 {row['Prod']} ({row['Est']})")
-        
         if row['Est'] == "Pendiente":
             c_ok, c_gar, c_monto = st.columns([1, 1, 1])
             if c_ok.button("✅ ENTREGAR", key=f"btn_ok_{row['ID']}"):
@@ -208,7 +185,6 @@ with tab_j: # PANEL JEFE
 
         st.subheader("🕵️ MONITOR DE AUDITORÍA")
         st.dataframe(df_a, use_container_width=True, hide_index=True)
-        
         c_j1, c_j2 = st.columns(2)
         with c_j1:
             with st.expander("📥 SURTIR BÓVEDA"):
@@ -238,7 +214,6 @@ with tab_j: # PANEL JEFE
         ce1.download_button("📥 Ventas", df_v.to_csv(index=False), "ventas.csv")
         ce2.download_button("📥 Mochilas", df_a.to_csv(index=False), "mochilas.csv")
         ce3.download_button("📥 Bóveda", df_s.to_csv(index=False), "boveda.csv")
-        
         st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
         if r1.button("LIMPIAR VENTAS", key="r_1"): 
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
