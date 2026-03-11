@@ -207,7 +207,7 @@ with tab_v: # REGISTRO DE VENTAS
     v_c = c2.text_input("Cliente").upper(); v_t = c3.text_input("WhatsApp")
     
     c4, c5, c6, c7 = st.columns([2, 1, 1, 1]) 
-    v_p = c4.selectbox("Producto", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="v_sel_2")
+    v_p = c4.selectbox("Producto", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], format_func=lambda x: f"{x} ({df_p[df_p['Cod']==x]['Uni'].values[0]})" if x != "N/A" and not df_p[df_p['Cod']==x].empty else x, key="v_sel_2")
     precio_base = float(df_p[df_p['Cod'] == v_p]['Pre'].values[0]) if not df_p.empty and v_p in df_p['Cod'].values else 0.0
     v_precio_final = c5.number_input("Precio ($)", min_value=0.0, value=precio_base, step=1.0)
     v_ca = c6.number_input("Cant.", min_value=0.1, value=1.0, key="v_num_1")
@@ -215,7 +215,7 @@ with tab_v: # REGISTRO DE VENTAS
     if c7.button("➕ AÑADIR"):
         if 'car' not in st.session_state: st.session_state.car = []
         pi = df_p[df_p['Cod'] == v_p].iloc[0] if not df_p.empty else None
-        nom_prod = pi['Nom'] if pi is not None else "Item"
+        nom_prod = f"{pi['Nom']} ({pi['Uni']})" if pi is not None else "Item"
         st.session_state.car.append({"Cod": v_p, "Nom": nom_prod, "Cant": v_ca, "Sub": v_precio_final*v_ca, "PrecioU": v_precio_final})
     
     if 'car' in st.session_state and st.session_state.car:
@@ -299,7 +299,7 @@ with tab_d: # 📊 DASHBOARD
             fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=300)
             st.plotly_chart(fig, use_container_width=True)
             pico = v_h.loc[v_h['Monto'].idxmax(), 'H'] if not v_h.empty else 0
-            st.info(f"🎯 VENTANA DE IMPACTO DETECTADA: *{pico}:00 HRS*. Los datos confirman máxima efectividad de cierre.")
+            st.info(f"🎯 VENTANA DE IMPACTO DETECTADA: {pico}:00 HRS. Los datos confirman máxima efectividad de cierre.")
     with cg2:
         st.write("🏎️ META SEMANAL")
         porc = min(v_sem / meta_semanal * 100, 100) if meta_semanal > 0 else 0
@@ -322,11 +322,11 @@ with tab_j: # PANEL JEFE (LÓGICA INTACTA)
         c_j1, c_j2 = st.columns(2)
         with c_j1:
             with st.expander("📥 SURTIR BÓVEDA"):
-                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="j_s3"), st.number_input("Cantidad Entrada", min_value=0.1, key="j_n2")
+                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], format_func=lambda x: f"{x} ({df_p[df_p['Cod']==x]['Uni'].values[0]})" if x != "N/A" and not df_p[df_p['Cod']==x].empty else x, key="j_s3"), st.number_input("Cantidad Entrada", min_value=0.1, key="j_n2")
                 if st.button("SUMAR A BÓVEDA"): df_s.loc[df_s['Cod'] == bp, 'Cant'] += bn; df_s.to_csv(db_s, index=False); st.rerun()
         with c_j2:
             with st.expander("🚚 RE-SURTIR / CARGA POR CIUDAD"):
-                cv, cp = st.selectbox("Elegir Vendedor", l_st, key="j_s4"), st.selectbox("Producto a Surtir", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="j_s5")
+                cv, cp = st.selectbox("Elegir Vendedor", l_st, key="j_s4"), st.selectbox("Producto a Surtir", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], format_func=lambda x: f"{x} ({df_p[df_p['Cod']==x]['Uni'].values[0]})" if x != "N/A" and not df_p[df_p['Cod']==x].empty else x, key="j_s5")
                 cn, ciu = st.number_input("Cantidad a entregar", min_value=0.1, key="j_n3"), st.text_input("Ciudad de Entrega", "CDMX")
                 if st.button("CONFIRMAR CARGA ACUMULATIVA"):
                     df_s.loc[df_s['Cod'] == cp, 'Cant'] -= cn
@@ -351,4 +351,3 @@ with tab_j: # PANEL JEFE (LÓGICA INTACTA)
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); st.rerun()
         if r2.button("BORRAR TODO", key="r_2"): 
             [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; st.rerun()
-
