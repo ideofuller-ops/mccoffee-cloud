@@ -33,7 +33,7 @@ def sincronizar(direccion="subir"):
                     df_to_save = pd.read_csv(csv_f)
                     ws.clear()
                     ws.update([df_to_save.columns.values.tolist()] + df_to_save.fillna("").values.tolist())
-    except Exception as e: pass
+    except Exception as e: st.error(f"Error: {e}")
 
 # --- 1. CONFIGURACIÓN Y BASES DE DATOS ---
 st.set_page_config(page_title="MCCOFFEE COMMAND CENTER", layout="wide")
@@ -217,6 +217,7 @@ with tab_j:
         st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
         if r1.button("LIMPIAR VENTAS"): pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); sincronizar("subir"); st.rerun()
         if r2.button("BORRAR TODO"): [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; preparar(); sincronizar("subir"); st.rerun()
+
 
 
 
