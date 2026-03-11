@@ -12,7 +12,7 @@ GOOGLE_JSON = {
     "type": "service_account",
     "project_id": "mccoffee-app",
     "private_key_id": "9ef15e58966a06cffd8756b33c0eed2ba93181b3",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDK/c8XhmL9jfYV\nnc0fpxkWk9t... (toda tu llave larga) ...\n-----END PRIVATE KEY-----\n",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDK/c8XhmL9ljFY\nc0fpXkWK9tms2TsVcd9Z4Uaa8f2P7h+eLbbv5sX+0anyTUbTD3zcbeZuUGsF7K+Q\n2PXGt83omZKuI7Y7lq3sRYcrHvxmowudopCCGyuxjFXB7/xZrGsDuH+DoICH7H9o\ngqWBCBKYGM6RTVAllt1L0tD5WCtJJuJiygXeBtakORzpmkBevW4+RptkRv1j7QPS\n2LlpoEp15qP4858Z6AKh99sh4yx6cEITBqHPxZf0ypLcIhTxq0SwFbka6QfIKZ9/\nWTpSVcUBZJkKbjWiI5BWUUaUyfc+fMrOVOIGDqkd/3rSjxxUyr/w12CF0b6pEOrc\nRddTDWy3AgMBAAECggEAX9vIwpa7Q358MgVKlclndM7Kj4YMET3zmAm6omwZbjEo\nrDVxWMv1fza6lwpoIj6Dm8KoWTrPt34EkJXsRpnA+pEfQ+3oXi5zVoqk4LeiwMNJ\nNnkw3cf/87nOO6XdWOmDpb+oM9wFJmsH5a4ggxTxVvMMBXDpor6iJW7aMY2x7zo+\nnXogKwA/ubE5sExXq+jzI89fWVQBbBXxlCEcWhPJwBWExcOV0I9LHpQoeErdC0jC\n83Y32j1bjaBl/hLizZHn53Gmqg41igo8IB9S8X2oXYFvdnnQ8GwuJCD6pBoiMLJd\ns8egoCtgMit/H/oMBwOrJLDuKralg3L68d4Me+nkrQKBgQDtftyftbR/uGYV+dW2\nLhRdQy86yP5N7G1+0LOqi2WOHFec893AqnKqVtS92d7D0MDsJsGSSo3+dEH8/7Ms\n2OM2swLABbwlwnUVAQCt/AJGgZb3qgVpNC4SWYDkG4OnS8bQAD1YcsQUh3t9eypS\nx1m2aKuktt4Eau90muOYuFzOcwKBgQDazrh3cL3zIW8u6O9ZzVPSISZZGBgi2GdI\nJNGQB+GGlpo3WpRxg+J8WwIq2PUKinXfo21Fe1r/E2uobFjdACNVkNU7N95Kq8Wa\ntzo19uwkq5IuYOhSUbOT5aKqBjDdfyQOv0Y/w3l+veI3KEror+RaajBmbPYuryLT\n4ZAu6bczrQKBgQCXH/32JyMHjuhvHX6PofzVZ9Ya+yFPpp36b4WUhYWHC6P4vPmk\nCxJSMFTJxmTJiAHrg7HzjDuU6pe/DVsPs6fJ+9lJJZ0XDgmA5xVuoQk1omrViDxP\nOKQEiy3IeXWqND77xttCeC0rvxamv4QsDqyYtTxb4P2gJAfh1Fn1qYNs3wKBgQDY\nPJlCuLGP2IfnZR49slRXApnCTLR1o0WWn4RXAeLYPneTorm24S5v1QT0UUsBKsrI\nw9qWYw0PriKj5MeBSMSiqCqChnjxdIYpm1A0ypyetMwXd3/A8qs0yykRPGMIUsDQ\nrij/lO+52G/6MKCvCjzzOaQxZRd6FWym1nDGXATIVQKBgDERI6il6Afa3yDOl9R7\nHneQSsbnYlx5djZY3UGWd+pa9KqkCkOGY/oQIQRgHEyY0+SN1sl7IR8zH6jCoMjd\nlbHQXhBr+4n0neccZmCtdmEFZpRoHp/iBbjCTC2ABGZZHcIxoK1a/WqDdZUnGtx9\nUcPM5JvE19j1B5IcuLj2IZUf\n-----END PRIVATE KEY-----\n",
     "client_email": "llave-mccoffee@mccoffee-app.iam.gserviceaccount.com",
     "client_id": "100914800366100140228"
 }
@@ -218,6 +218,7 @@ with tab_j:
         st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
         if r1.button("LIMPIAR VENTAS"): pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); sincronizar("subir"); st.rerun()
         if r2.button("BORRAR TODO"): [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; preparar(); sincronizar("subir"); st.rerun()
+
 
 
 
