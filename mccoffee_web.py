@@ -219,3 +219,4 @@ with tab_j:
         if r2.button("BORRAR TODO"): [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; preparar(); sincronizar("subir"); st.rerun()
 
 
+
