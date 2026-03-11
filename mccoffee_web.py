@@ -22,7 +22,7 @@ def sincronizar(direccion="subir"):
         scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/drive']
         creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_JSON, scope)
         client = gspread.authorize(creds)
-        sh = client.open_by_key('1ZZgAeP6gWiaUzfBGuCYA0zQpSjcKic0aSZArq3vv96w')
+        sh = client.open_by_key('1ZZgAeP6gWiaUzfBGuCYA0zQpSjCKicOaSQZrq3vv96w')
         tablas = {db_v: "ventas", db_p: "productos", db_s: "stock", db_a: "auditoria", db_st: "staff"}
         for csv_f, sheet_n in tablas.items():
             ws = sh.worksheet(sheet_n)
@@ -218,6 +218,7 @@ with tab_j:
         st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
         if r1.button("LIMPIAR VENTAS"): pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); sincronizar("subir"); st.rerun()
         if r2.button("BORRAR TODO"): [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; preparar(); sincronizar("subir"); st.rerun()
+
 
 
 
