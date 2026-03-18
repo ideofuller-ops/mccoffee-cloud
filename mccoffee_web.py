@@ -246,7 +246,7 @@ with tab_j:
         c_j1, c_j2 = st.columns(2)
         with c_j1:
             with st.expander("📥 SURTIR BÓVEDA"):
-                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], format_func=lambda x: f"{x} ({df_p[df_p['Cod']==x]['Uni'].values[0]})" if x != "N/A" and not df_p[df_p['Cod']==x].empty else x, key="js3"), st.number_input("Cantidad Entrada", min_value=0.1, key="jn
+                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"]), format_func=lambda x: f"{x} ({df_p[df_p['Cod']==x]['Uni'].values[0]})" if x != "N/A" and not df_p[df_p['Cod']==x].empty else x, key="js3"), st.number_input("Cantidad Entrada", min_value=0.1, key="jn
 
 
 
