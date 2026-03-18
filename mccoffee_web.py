@@ -185,7 +185,6 @@ with tab_d:
         st.write("🏎️ META SEMANAL"); porc = min(v_sem / meta_semanal * 100, 100) if meta_semanal > 0 else 0
         fig_g = go.Figure(go.Indicator(mode="gauge+number", value=porc, gauge={'bar':{'color':'#f1c40f'}, 'bgcolor':'rgba(255,255,255,0.05)'}))
         fig_g.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color':"white"}, height=300); st.plotly_chart(fig_g, use_container_width=True)
-
 with tab_j:
     pw = st.text_input("Contraseña", type="password")
     if pw == CLAVE_MAESTRA:
@@ -221,56 +220,62 @@ with tab_j:
                 st.table(cobranza.style.format({"Monto": "${:,.2f}"}))
 
         with st.expander("🎯 CONFIGURAR METAS"):
-            c_me1, c_me2 = st.columns(2); nm1 = c_me1.number_input("Meta Diaria ($)", value=meta_diaria); nm2 = c_me2.number_input("Meta Semanal ($)", value=meta_semanal)
+            c_me1, c_me2 = st.columns(2)
+            nm1 = c_me1.number_input("Meta Diaria ($)", value=meta_diaria)
+            nm2 = c_me2.number_input("Meta Semanal ($)", value=meta_semanal)
             if st.button("ACTUALIZAR METAS"):
                 with open(db_m, "w") as f: f.write(str(nm1))
-                with open(db_mw, "w") as f: f.write(str(nm2)); st.rerun()
+                with open(db_mw, "w") as f: f.write(str(nm2))
+                st.rerun()
         
-        st.subheader("🕵️ MONITOR DE AUDITORÍA"); st.dataframe(df_a, use_container_width=True, hide_index=True)
+        st.subheader("🕵️ MONITOR DE AUDITORÍA")
+        st.dataframe(df_a, use_container_width=True, hide_index=True)
         
         c_j1, c_j2 = st.columns(2)
         with c_j1:
             with st.expander("📥 SURTIR BÓVEDA"):
-                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], format_func=lambda x: f"{x} ({df_p[df_p['Cod']==x]['Uni'].values[0]})" if x != "N/A" and not df_p[df_p['Cod']==x].empty else x, key="js3"), st.number_input("Cantidad Entrada", min_value=0.1, key="jn2")
-                if st.button("SUMAR A BÓVEDA"): df_s.loc[df_s['Cod'] == bp, 'Cant'] += bn; df_s.to_csv(db_s, index=False); sincronizar("subir"); st.rerun()
+                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="js3"), st.number_input("Cantidad Entrada", min_value=0.1, key="jn2")
+                if st.button("SUMAR A BÓVEDA"):
+                    df_s.loc[df_s['Cod'] == bp, 'Cant'] += bn
+                    df_s.to_csv(db_s, index=False); sincronizar("subir"); st.rerun()
         with c_j2:
             with st.expander("🚚 RE-SURTIR"):
                 cv, cp, cn = st.selectbox("Elegir Vendedor", l_st, key="js4"), st.selectbox("Producto a Surtir", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="js5"), st.number_input("Cantidad", min_value=0.1, key="jn3")
                 if st.button("CONFIRMAR CARGA"):
-                    df_s.loc[df_s['Cod'] == cp, 'Cant'] -= cn; mk = (df_a['Vendedor'] == cv) & (df_a['Cod'] == cp)
-                    else: 
+                    df_s.loc[df_s['Cod'] == cp, 'Cant'] -= cn
+                    mk = (df_a['Vendedor'] == cv) & (df_a['Cod'] == cp)
+                    if mk.any():
+                        df_a.loc[mk, 'Entregado'] += cn
+                        df_a.loc[mk, 'Actual'] += cn
+                    else:
                         df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": cv, "Cod": cp, "Entregado": cn, "Vendido": 0, "Actual": cn}])])
                     df_s.to_csv(db_s, index=False); df_a.to_csv(db_a, index=False); sincronizar("subir"); st.rerun()
 
         with st.expander("👥 STAFF Y CATÁLOGO"):
             nv = st.text_input("Nuevo Vendedor")
-            if st.button("Registrar Vendedor"): 
+            if st.button("Registrar Vendedor"):
                 pd.concat([df_st, pd.DataFrame([{"Nombre": nv.upper()}])]).drop_duplicates().to_csv(db_st, index=False)
                 sincronizar("subir"); st.rerun()
-            
             st.markdown("---")
             f1, f2, f3, f4 = st.columns(4)
-            pc, pn, pp, pu = f1.text_input("Clave Prod"), f2.text_input("Nombre Prod"), f3.number_input("Precio $"), f4.text_input("Unidad (pza/caja)")
+            pc, pn, pp, pu = f1.text_input("Clave"), f2.text_input("Nom"), f3.number_input("Precio"), f4.text_input("Uni")
             if st.button("Guardar Producto"):
                 pd.concat([df_p, pd.DataFrame([{"Cod": pc.upper(), "Nom": pn, "Pre": pp, "Uni": pu}])]).to_csv(db_p, index=False)
                 pd.concat([df_s, pd.DataFrame([{"Cod": pc.upper(), "Cant": 0}])]).to_csv(db_s, index=False)
                 sincronizar("subir"); st.rerun()
 
-        st.markdown("---")
-        st.info("📊 EXPORTAR DATOS LOCALES")
+        st.info("📊 EXPORTAR")
         ce1, ce2, ce3 = st.columns(3)
-        ce1.download_button("📥 Descargar Ventas", df_v.to_csv(index=False), "ventas_mccoffee.csv")
-        ce2.download_button("📥 Descargar Mochilas", df_a.to_csv(index=False), "auditoria_mochilas.csv")
-        ce3.download_button("📥 Descargar Bóveda", df_s.to_csv(index=False), "inventario_central.csv")
+        ce1.download_button("📥 Ventas", df_v.to_csv(index=False), "ventas.csv")
+        ce2.download_button("📥 Mochilas", df_a.to_csv(index=False), "mochilas.csv")
+        ce3.download_button("📥 Bóveda", df_s.to_csv(index=False), "boveda.csv")
 
-        st.markdown("---")
-        st.error("🚨 ZONA DE REINICIO CRÍTICO")
+        st.error("🚨 REINICIO")
         r1, r2 = st.columns(2)
-        if r1.button("LIMPIAR HISTORIAL DE VENTAS"):
+        if r1.button("LIMPIAR VENTAS"):
             pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False)
             sincronizar("subir"); st.rerun()
-        if r2.button("BORRAR TODO EL SISTEMA"):
-            archivos = [db_v, db_p, db_s, db_a, db_st, db_e]
-            for f in archivos:
+        if r2.button("BORRAR TODO"):
+            for f in [db_v, db_p, db_s, db_a, db_st, db_e]:
                 if os.path.exists(f): os.remove(f)
             preparar(); sincronizar("subir"); st.rerun()
