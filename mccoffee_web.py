@@ -23,9 +23,14 @@ def sincronizar(direccion="subir"):
         creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_JSON, scope)
         client = gspread.authorize(creds)
         sh = client.open_by_key('1ZZgAeP6gWiaUzfBGuCYA0zQpSjCKicOaSQZrq3vv96w')
-        tablas = {db_v: "ventas", db_p: "productos", db_s: "stock", db_a: "auditoria", db_st: "staff"}
+        # SE AÑADIÓ db_e A LA SINCRONIZACIÓN
+        tablas = {db_v: "ventas", db_p: "productos", db_s: "stock", db_a: "auditoria", db_st: "staff", db_e: "egresos"}
         for csv_f, sheet_n in tablas.items():
-            ws = sh.worksheet(sheet_n)
+            try:
+                ws = sh.worksheet(sheet_n)
+            except:
+                ws = sh.add_worksheet(title=sheet_n, rows="100", cols="20")
+            
             if direccion == "bajar":
                 data = ws.get_all_records()
                 if data: pd.DataFrame(data).to_csv(csv_f, index=False)
@@ -34,16 +39,22 @@ def sincronizar(direccion="subir"):
                     df_to_save = pd.read_csv(csv_f)
                     ws.clear()
                     ws.update([df_to_save.columns.values.tolist()] + df_to_save.fillna("").values.tolist())
-    except Exception as e: st.error(f"Error: {e}")
+    except Exception as e: st.error(f"Error Sincro: {e}")
 
 # --- 1. CONFIGURACIÓN Y BASES DE DATOS ---
 st.set_page_config(page_title="MCCOFFEE COMMAND CENTER", layout="wide")
 CLAVE_MAESTRA = "mccoffee2026"
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
-db_v, db_p, db_s, db_a, db_st, db_m, db_mw = "base_ventas.csv", "base_productos.csv", "base_stock.csv", "base_auditoria.csv", "base_staff.csv", "meta.txt", "meta_semanal.txt"
+# SE AÑADIÓ db_e PARA GASTOS
+db_v, db_p, db_s, db_a, db_st, db_m, db_mw, db_e = "base_ventas.csv", "base_productos.csv", "base_stock.csv", "base_auditoria.csv", "base_staff.csv", "meta.txt", "meta_semanal.txt", "base_egresos.csv"
 
 def preparar():
-    files = [(db_v, ["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]), (db_p, ["Cod","Nom","Pre","Uni"]), (db_s, ["Cod","Cant"]), (db_a, ["Vendedor","Cod","Entregado","Vendido","Actual"]), (db_st, ["Nombre"])]
+    files = [(db_v, ["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]), 
+             (db_p, ["Cod","Nom","Pre","Uni"]), 
+             (db_s, ["Cod","Cant"]), 
+             (db_a, ["Vendedor","Cod","Entregado","Vendido","Actual"]), 
+             (db_st, ["Nombre"]),
+             (db_e, ["Fecha", "Concepto", "Monto"])] # NUEVA TABLA EGRESOS
     for f, c in files:
         if not os.path.exists(f): pd.DataFrame(columns=c).to_csv(f, index=False)
     if not os.path.exists(db_m):
@@ -59,6 +70,7 @@ preparar()
 df_v = pd.read_csv(db_v)
 df_v['Fecha_DT'] = pd.to_datetime(df_v['Fecha'], dayfirst=True, errors='coerce').dt.tz_localize(None)
 df_p = pd.read_csv(db_p); df_s = pd.read_csv(db_s); df_a = pd.read_csv(db_a); df_st = pd.read_csv(db_st)
+df_e = pd.read_csv(db_e) # CARGAR EGRESOS
 with open(db_m, "r") as f: meta_diaria = float(f.read())
 with open(db_mw, "r") as f: meta_semanal = float(f.read())
 
@@ -81,6 +93,7 @@ st.markdown(f"""
     .feed-item {{ padding: 8px; background: rgba(212, 175, 55, 0.1); border-left: 4px solid #f1c40f; margin-bottom: 5px; border-radius: 4px; font-size: 13px; }}
     .ranking-row {{ background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; margin-bottom: 5px; border-left: 3px solid #d4af37; font-size: 14px; }}
     .total-gigante {{ color: #d4af37; font-size: 55px !important; font-weight: bold; text-align: center; }}
+    .utilidad-box {{ background: rgba(0,0,0,0.4); border: 2px solid #27ae60; padding: 20px; border-radius: 15px; text-align: center; margin-top: 10px; }}
     hr {{ border: 0; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); }}
     </style>
     """, unsafe_allow_html=True)
@@ -113,7 +126,7 @@ with st.sidebar:
         p_u = df_p[df_p['Cod'] == s['Cod']]['Uni'].values[0] if not df_p[df_p['Cod'] == s['Cod']].empty else ""
         st.markdown(f"<p style='color: #d4af37; margin:0; font-size:14px;'>{s['Cod']}: <b>{s['Cant']} {p_u}</b></p>", unsafe_allow_html=True)
 
-# --- 3. PESTAÑAS (COMPARACIÓN EXHAUSTIVA COMPLETADA) ---
+# --- 3. PESTAÑAS ---
 tab_v, tab_p, tab_d, tab_j = st.tabs(["🚀 VENTAS", "📋 PEDIDOS", "📊 DASHBOARD", "🔐 PANEL JEFE"])
 
 with tab_v:
@@ -142,7 +155,9 @@ with tab_v:
                 if mk.any(): df_a.loc[mk, 'Vendido'] += i['Cant']; df_a.loc[mk, 'Actual'] -= i['Cant']
                 else: df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": v_v, "Cod": i['Cod'], "Entregado": 0, "Vendido": i['Cant'], "Actual": -i['Cant']}])])
             pd.concat([df_v, nv]).to_csv(db_v, index=False); df_a.to_csv(db_a, index=False)
-            sincronizar("subir"); st.session_state.car = []; st.rerun()
+            sincronizar("subir"); st.session_state.car = []; 
+            # --- MEJORA: AUTO-RESET (DESACTIVADO POR SEGURIDAD, DESCOMENTAR PARA USAR) ---
+            # st.rerun() 
 
 with tab_p:
     for idx, row in df_v.sort_values(by=['ID'], ascending=False).head(20).iterrows():
@@ -187,6 +202,41 @@ with tab_d:
 with tab_j:
     pw = st.text_input("Contraseña", type="password")
     if pw == CLAVE_MAESTRA:
+        # --- MEJORA: DASHBOARD DE COBRANZA TOTAL POR VENDEDOR ---
+        st.markdown("### 💰 DASHBOARD DE COBRANZA (AUDITORÍA DE DINERO)")
+        if not df_v.empty:
+            resumen_cobro = df_v.groupby('Vend')['Monto'].sum().reset_index()
+            resumen_cobro.columns = ['Vendedor', 'Total Recaudado ($)']
+            st.table(resumen_cobro)
+            total_global = resumen_cobro['Total Recaudado ($)'].sum()
+            
+            # --- MEJORA: REGISTRO DE GASTOS Y UTILIDAD NETA ---
+            st.markdown("---")
+            col_ga1, col_ga2 = st.columns(2)
+            with col_ga1:
+                st.subheader("💸 REGISTRAR GASTOS (EGRESOS)")
+                with st.expander("Añadir Gasto (Renta, Cajas, etc.)"):
+                    g_concepto = st.text_input("Concepto (Ej: Renta, Paquetería)")
+                    g_monto = st.number_input("Monto del Gasto ($)", min_value=0.0, step=10.0)
+                    if st.button("GUARDAR GASTO"):
+                        ng = pd.DataFrame([{"Fecha": ahora_mx.strftime("%d/%m/%Y"), "Concepto": g_concepto.upper(), "Monto": g_monto}])
+                        pd.concat([pd.read_csv(db_e), ng]).to_csv(db_e, index=False)
+                        sincronizar("subir"); st.success("Gasto registrado"); st.rerun()
+            
+            with col_ga2:
+                st.subheader("📉 RESUMEN FINANCIERO")
+                total_gastos = pd.read_csv(db_e)['Monto'].sum()
+                utilidad_real = total_global - total_gastos
+                st.markdown(f"""
+                    <div class='utilidad-box'>
+                        <p style='color:#f1c40f; margin:0;'>Ventas Brutas: <b>${total_global:,.2f}</b></p>
+                        <p style='color:#e74c3c; margin:0;'>Gastos Totales: <b>-${total_gastos:,.2f}</b></p>
+                        <hr>
+                        <p style='color:#2ecc71; font-size:24px; margin:0;'>UTILIDAD NETA: <br><b>${utilidad_real:,.2f}</b></p>
+                    </div>
+                """, unsafe_allow_html=True)
+        st.markdown("---")
+
         with st.expander("🎯 CONFIGURAR METAS"):
             c_me1, c_me2 = st.columns(2); nm1 = c_me1.number_input("Meta Diaria ($)", value=meta_diaria); nm2 = c_me2.number_input("Meta Semanal ($)", value=meta_semanal)
             if st.button("ACTUALIZAR"):
@@ -196,29 +246,7 @@ with tab_j:
         c_j1, c_j2 = st.columns(2)
         with c_j1:
             with st.expander("📥 SURTIR BÓVEDA"):
-                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], format_func=lambda x: f"{x} ({df_p[df_p['Cod']==x]['Uni'].values[0]})" if x != "N/A" and not df_p[df_p['Cod']==x].empty else x, key="js3"), st.number_input("Cantidad Entrada", min_value=0.1, key="jn2")
-                if st.button("SUMAR A BÓVEDA"): df_s.loc[df_s['Cod'] == bp, 'Cant'] += bn; df_s.to_csv(db_s, index=False); sincronizar("subir"); st.rerun()
-        with c_j2:
-            with st.expander("🚚 RE-SURTIR"):
-                cv, cp, cn = st.selectbox("Elegir Vendedor", l_st, key="js4"), st.selectbox("Producto a Surtir", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="js5"), st.number_input("Cantidad", min_value=0.1, key="jn3")
-                if st.button("CONFIRMAR CARGA"):
-                    df_s.loc[df_s['Cod'] == cp, 'Cant'] -= cn; mk = (df_a['Vendedor'] == cv) & (df_a['Cod'] == cp)
-                    if mk.any(): df_a.loc[mk, 'Entregado'] += cn; df_a.loc[mk, 'Actual'] += cn
-                    else: df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": cv, "Cod": cp, "Entregado": cn, "Vendido": 0, "Actual": cn}])])
-                    df_s.to_csv(db_s, index=False); df_a.to_csv(db_a, index=False); sincronizar("subir"); st.rerun()
-        with st.expander("👥 STAFF Y CATÁLOGO"):
-            nv = st.text_input("Nuevo Vendedor"); 
-            if st.button("Registrar"): pd.concat([df_st, pd.DataFrame([{"Nombre": nv.upper()}])]).drop_duplicates().to_csv(db_st, index=False); sincronizar("subir"); st.rerun()
-            f1, f2, f3, f4 = st.columns(4); pc, pn, pp, pu = f1.text_input("Clave"), f2.text_input("Nom"), f3.number_input("$"), f4.text_input("Uni")
-            if st.button("Guardar Producto"):
-                pd.concat([df_p, pd.DataFrame([{"Cod": pc.upper(), "Nom": pn, "Pre": pp, "Uni": pu}])]).to_csv(db_p, index=False)
-                pd.concat([df_s, pd.DataFrame([{"Cod": pc.upper(), "Cant": 0}])]).to_csv(db_s, index=False); sincronizar("subir"); st.rerun()
-        st.info("📊 EXPORTAR"); ce1, ce2, ce3 = st.columns(3)
-        ce1.download_button("📥 Ventas", df_v.to_csv(index=False), "ventas.csv"); ce2.download_button("📥 Mochilas", df_a.to_csv(index=False), "mochilas.csv"); ce3.download_button("📥 Bóveda", df_s.to_csv(index=False), "boveda.csv")
-        st.error("🚨 REINICIO"); r1, r2 = st.columns(2)
-        if r1.button("LIMPIAR VENTAS"): pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False); sincronizar("subir"); st.rerun()
-        if r2.button("BORRAR TODO"): [os.remove(f) for f in [db_v, db_p, db_s, db_a, db_st] if os.path.exists(f)]; preparar(); sincronizar("subir"); st.rerun()
-
+                bp, bn = st.selectbox("Producto Proveedor", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], format_func=lambda x: f"{x} ({df_p[df_p['Cod']==x]['Uni'].values[0]})" if x != "N/A" and not df_p[df_p['Cod']==x].empty else x, key="js3"), st.number_input("Cantidad Entrada", min_value=0.1, key="jn
 
 
 
