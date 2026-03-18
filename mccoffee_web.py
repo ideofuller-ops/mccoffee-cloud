@@ -238,4 +238,39 @@ with tab_j:
                 cv, cp, cn = st.selectbox("Elegir Vendedor", l_st, key="js4"), st.selectbox("Producto a Surtir", df_p['Cod'].tolist() if not df_p.empty else ["N/A"], key="js5"), st.number_input("Cantidad", min_value=0.1, key="jn3")
                 if st.button("CONFIRMAR CARGA"):
                     df_s.loc[df_s['Cod'] == cp, 'Cant'] -= cn; mk = (df_a['Vendedor'] == cv) & (df_a['Cod'] == cp)
-                    if mk.any(): df_a.loc[mk, 'Entregado'] += cn; df_a.loc[mk, 'Actual'] += cn
+                    else: 
+                        df_a = pd.concat([df_a, pd.DataFrame([{"Vendedor": cv, "Cod": cp, "Entregado": cn, "Vendido": 0, "Actual": cn}])])
+                    df_s.to_csv(db_s, index=False); df_a.to_csv(db_a, index=False); sincronizar("subir"); st.rerun()
+
+        with st.expander("👥 STAFF Y CATÁLOGO"):
+            nv = st.text_input("Nuevo Vendedor")
+            if st.button("Registrar Vendedor"): 
+                pd.concat([df_st, pd.DataFrame([{"Nombre": nv.upper()}])]).drop_duplicates().to_csv(db_st, index=False)
+                sincronizar("subir"); st.rerun()
+            
+            st.markdown("---")
+            f1, f2, f3, f4 = st.columns(4)
+            pc, pn, pp, pu = f1.text_input("Clave Prod"), f2.text_input("Nombre Prod"), f3.number_input("Precio $"), f4.text_input("Unidad (pza/caja)")
+            if st.button("Guardar Producto"):
+                pd.concat([df_p, pd.DataFrame([{"Cod": pc.upper(), "Nom": pn, "Pre": pp, "Uni": pu}])]).to_csv(db_p, index=False)
+                pd.concat([df_s, pd.DataFrame([{"Cod": pc.upper(), "Cant": 0}])]).to_csv(db_s, index=False)
+                sincronizar("subir"); st.rerun()
+
+        st.markdown("---")
+        st.info("📊 EXPORTAR DATOS LOCALES")
+        ce1, ce2, ce3 = st.columns(3)
+        ce1.download_button("📥 Descargar Ventas", df_v.to_csv(index=False), "ventas_mccoffee.csv")
+        ce2.download_button("📥 Descargar Mochilas", df_a.to_csv(index=False), "auditoria_mochilas.csv")
+        ce3.download_button("📥 Descargar Bóveda", df_s.to_csv(index=False), "inventario_central.csv")
+
+        st.markdown("---")
+        st.error("🚨 ZONA DE REINICIO CRÍTICO")
+        r1, r2 = st.columns(2)
+        if r1.button("LIMPIAR HISTORIAL DE VENTAS"):
+            pd.DataFrame(columns=["ID","Fecha","Vend","Cli","Tel","Prod","Monto","Est"]).to_csv(db_v, index=False)
+            sincronizar("subir"); st.rerun()
+        if r2.button("BORRAR TODO EL SISTEMA"):
+            archivos = [db_v, db_p, db_s, db_a, db_st, db_e]
+            for f in archivos:
+                if os.path.exists(f): os.remove(f)
+            preparar(); sincronizar("subir"); st.rerun()
